@@ -1,0 +1,4 @@
+builder: cmake
+kill: hanayomi
+build_args:
+  - "-DCMAKE_BUILD_TYPE=Release"

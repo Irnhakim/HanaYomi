@@ -1,0 +1,15 @@
+/./hanayomi
+/./qml/pages/BrowsePage.qml
+/./qml/pages/UpdatesPage.qml
+/./qml/pages/MangaDetailPage.qml
+/./qml/pages/MorePage.qml
+/./qml/pages/ReaderPage.qml
+/./qml/pages/HistoryPage.qml
+/./qml/pages/LibraryPage.qml
+/./qml/assets/logo.png
+/./qml/assets/icon.svg
+/./qml/Main.qml
+/./hanayomi.desktop
+/./hanayomi.apparmor
+/./manifest.json
+/./hanayomi.svg

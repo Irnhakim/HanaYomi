@@ -1,0 +1,15 @@
+{
+    "name": "hanayomi.hakim",
+    "description": "Native manga reader for Ubuntu Touch, inspired by Mihon.",
+    "architecture": "all",
+    "title": "HanaYomi",
+    "hooks": {
+        "hanayomi": {
+            "apparmor": "hanayomi.apparmor",
+            "desktop": "hanayomi.desktop"
+        }
+    },
+    "version": "1.0.0",
+    "maintainer": "Hakim <hakim@example.com>",
+    "framework": "ubuntu-sdk-20.04"
+}
