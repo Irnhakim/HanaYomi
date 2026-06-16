@@ -8,6 +8,7 @@ Page {
 
     // Reference to the main stack to pop/push
     property var mainStack: null
+    property var onClosed: null
 
     Rectangle {
         anchors.fill: parent
@@ -100,6 +101,9 @@ Page {
                 onTriggered: {
                     if (mainStack) {
                         mainStack.pop()
+                        if (extensionStoresPage.onClosed) {
+                            extensionStoresPage.onClosed()
+                        }
                     }
                 }
             }

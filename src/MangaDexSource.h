@@ -36,6 +36,12 @@ public:
     // Setara dengan HttpSource.fetchPageList() — ambil URL gambar per bab
     Q_INVOKABLE void getPageList(const QString &chapterId);
 
+    // Set base URL dynamically (equivalent to HttpSource.baseUrl)
+    Q_INVOKABLE void setBaseUrl(const QString &url);
+
+    // Set source name dynamically (equivalent to HttpSource.name)
+    Q_INVOKABLE void setSourceName(const QString &name);
+
 signals:
     // Emitted saat daftar manga (pencarian/popular) siap
     void mangaListReady(QVariantList mangas);
@@ -54,7 +60,11 @@ signals:
 
 private:
     QNetworkAccessManager *m_nam;
-    const QString BASE_URL = "https://api.mangadex.org";
+    QString m_baseUrl;
+    QString m_sourceName;
+
+    // Helper: kirim GET request dan abaikan SSL error secara eksplisit
+    QNetworkReply* sendGetRequest(const QNetworkRequest &req);
 
     // Helper: buat QNetworkRequest dengan User-Agent yang kompatibel
     QNetworkRequest createRequest(const QUrl &url);
@@ -64,4 +74,10 @@ private:
 
     // Helper: ambil URL cover art dari relationships[]
     QString extractCoverUrl(const QString &mangaId, const QJsonArray &relationships);
+
+    // Madara HTML Parser Helpers
+    QVariantList parseMadaraCatalog(const QString &html);
+    QVariantMap parseMadaraDetails(const QString &html, const QString &mangaId);
+    QVariantList parseMadaraChapters(const QString &html, const QString &mangaId);
+    QVariantList parseMadaraPages(const QString &html);
 };

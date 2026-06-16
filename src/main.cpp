@@ -9,17 +9,42 @@
 #include "MangaDexSource.h"
 #include "DatabaseHelper.h"
 
+#include <QNetworkReply>
+#include <QSslError>
+#include <QDebug>
+
+#include <QSslConfiguration>
+#include <QSslSocket>
+
 // Factory to inject User-Agent globally into all QML network requests (like Image loading)
 class CustomNetworkAccessManager : public QNetworkAccessManager
 {
 public:
-    explicit CustomNetworkAccessManager(QObject *parent = nullptr) : QNetworkAccessManager(parent) {}
+    explicit CustomNetworkAccessManager(QObject *parent = nullptr) : QNetworkAccessManager(parent)
+    {
+        connect(this, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply *reply, const QList<QSslError> &errors) {
+            qDebug() << "Ignoring QML SSL errors:" << errors;
+            reply->ignoreSslErrors();
+        });
+    }
 protected:
     QNetworkReply *createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData = nullptr) override
     {
         QNetworkRequest req = request;
         req.setRawHeader("User-Agent", "HanaYomi/1.0.0 (contact@hanayomi.app)");
-        return QNetworkAccessManager::createRequest(op, req, outgoingData);
+        
+        QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
+        sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
+        req.setSslConfiguration(sslConf);
+        
+        QNetworkReply *reply = QNetworkAccessManager::createRequest(op, req, outgoingData);
+        if (reply) {
+            connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &errors) {
+                qDebug() << "Reply ignoring QML SSL errors:" << errors;
+                reply->ignoreSslErrors();
+            });
+        }
+        return reply;
     }
 };
 

@@ -1,6 +1,6 @@
 {
     "name": "hanayomi.hakim",
-    "description": "Native manga reader for Ubuntu Touch, inspired by Mihon.",
+    "description": "Native manga reader for Ubuntu Touch, inspired by Mihon & Tachiyomi.",
     "architecture": "all",
     "title": "HanaYomi",
     "hooks": {

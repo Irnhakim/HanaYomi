@@ -1087,7 +1087,12 @@ CMakeFiles/hanayomi.dir/src/MangaDexSource.cpp.o: ../../../src/MangaDexSource.cp
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QDebug \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/qdebug.h \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QDateTime \
-  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
 
 CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
   /usr/include/stdc-predef.h \
@@ -1554,7 +1559,12 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
   ../../../src/models/Chapter.h \
   ../../../src/models/HistoryEntry.h \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QDateTime \
-  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
 
 
 /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlnetworkaccessmanagerfactory.h:
@@ -1612,6 +1622,10 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QEvent:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatastream.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qgenericmatrix.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qquaternion.h:
 
 /usr/include/c++/9/bits/erase_if.h:
 
@@ -1765,9 +1779,9 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/time64.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qgenericmatrix.h:
-
 /usr/include/c++/9/bits/memoryfwd.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_sched_param.h:
 
@@ -1949,8 +1963,6 @@ hanayomi_autogen/UVLADIE3JM/moc_DatabaseHelper.cpp:
 
 ../../../src/DatabaseHelper.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qstring.h:
-
 /usr/include/c++/9/cstdint:
 
 /usr/include/c++/9/unordered_map:
@@ -2087,9 +2099,11 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qquaternion.h:
-
 /usr/include/endian.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qstring.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qrgba64.h:
 

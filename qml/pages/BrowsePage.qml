@@ -66,7 +66,8 @@ Page {
             "name": "MangaDex",
             "pkg": "eu.kanade.tachiyomi.extension.en.mangadex",
             "lang": "en",
-            "isBuiltIn": true
+            "isBuiltIn": true,
+            "baseUrl": "https://api.mangadex.org"
         });
 
         // Tambah ekstensi lain yang telah di-install
@@ -78,7 +79,8 @@ Page {
                     "name": ext.name.replace("Tachiyomi: ", ""),
                     "pkg": ext.pkg,
                     "lang": ext.lang,
-                    "isBuiltIn": false
+                    "isBuiltIn": false,
+                    "baseUrl": ext.baseUrl || ""
                 });
             }
         }
@@ -91,6 +93,8 @@ Page {
             repos = JSON.parse(settings.extensionRepos);
         } catch(e) {}
         
+        console.log("Extension repos configured:", JSON.stringify(repos));
+
         if (repos.length === 0) {
             refreshActiveSources();
             return;
@@ -110,6 +114,8 @@ Page {
                     url += "/index.min.json";
                 }
             }
+
+            console.log("Fetching extensions index from URL:", url);
 
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
@@ -132,13 +138,22 @@ Page {
                                     }
                                 }
                                 if (!found) {
+                                    var baseUrl = "";
+                                    if (ext.sources && ext.sources.length > 0) {
+                                        var rawUrl = ext.sources[0].baseUrl || "";
+                                        var parts = rawUrl.split(",");
+                                        if (parts.length > 0) {
+                                            baseUrl = parts[0].split("#")[0].trim();
+                                        }
+                                    }
                                     extensionModel.append({
                                         "name": ext.name || "",
                                         "pkg": ext.pkg || "",
                                         "version": ext.version || "",
                                         "lang": ext.lang || "",
                                         "nsfw": ext.nsfw === 1,
-                                        "apk": ext.apk || ""
+                                        "apk": ext.apk || "",
+                                        "baseUrl": baseUrl
                                     });
                                 }
                             }
@@ -147,7 +162,7 @@ Page {
                             console.log("Failed to parse extensions JSON from " + url + ":", e);
                         }
                     } else {
-                        console.log("Failed to fetch extensions from " + url + ":", xhr.statusText);
+                        console.log("Failed to fetch extensions from " + url + " - Status:", xhr.status, "Text:", xhr.statusText);
                     }
                 }
             }
@@ -830,10 +845,12 @@ Page {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
+                                var targetUrl = model.baseUrl || "https://api.mangadex.org";
+                                mangaDex.setBaseUrl(targetUrl);
+                                mangaDex.setSourceName(model.name);
                                 selectedSource = model.name;
                                 browsePage.isLoading = true;
                                 mangaModel.clear();
-                                // load popular manga (untuk demo, source lain juga memanggil MangaDex)
                                 mangaDex.getPopularManga(1);
                             }
                         }
@@ -1217,7 +1234,10 @@ Page {
                             if (modelData.label === "Extension stores") {
                                 if (mainStack) {
                                     mainStack.push(Qt.resolvedUrl("ExtensionStoresPage.qml"), {
-                                        mainStack: mainStack
+                                        mainStack: mainStack,
+                                        onClosed: function() {
+                                            browsePage.loadExtensions();
+                                        }
                                     })
                                 }
                             }

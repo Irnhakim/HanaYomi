@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MangaDexSource_t {
-    QByteArrayData data[21];
-    char stringdata0[228];
+    QByteArrayData data[25];
+    char stringdata0[262];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -51,7 +51,11 @@ QT_MOC_LITERAL(16, 167, 15), // "getMangaDetails"
 QT_MOC_LITERAL(17, 183, 7), // "mangaId"
 QT_MOC_LITERAL(18, 191, 14), // "getChapterList"
 QT_MOC_LITERAL(19, 206, 11), // "getPageList"
-QT_MOC_LITERAL(20, 218, 9) // "chapterId"
+QT_MOC_LITERAL(20, 218, 9), // "chapterId"
+QT_MOC_LITERAL(21, 228, 10), // "setBaseUrl"
+QT_MOC_LITERAL(22, 239, 3), // "url"
+QT_MOC_LITERAL(23, 243, 13), // "setSourceName"
+QT_MOC_LITERAL(24, 257, 4) // "name"
 
     },
     "MangaDexSource\0mangaListReady\0\0mangas\0"
@@ -59,7 +63,8 @@ QT_MOC_LITERAL(20, 218, 9) // "chapterId"
     "chapters\0pageListReady\0pages\0networkError\0"
     "message\0getPopularManga\0page\0searchManga\0"
     "query\0getMangaDetails\0mangaId\0"
-    "getChapterList\0getPageList\0chapterId"
+    "getChapterList\0getPageList\0chapterId\0"
+    "setBaseUrl\0url\0setSourceName\0name"
 };
 #undef QT_MOC_LITERAL
 
@@ -69,7 +74,7 @@ static const uint qt_meta_data_MangaDexSource[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      12,   14, // methods
+      14,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -77,20 +82,22 @@ static const uint qt_meta_data_MangaDexSource[] = {
        5,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,   74,    2, 0x06 /* Public */,
-       4,    1,   77,    2, 0x06 /* Public */,
-       6,    1,   80,    2, 0x06 /* Public */,
-       8,    1,   83,    2, 0x06 /* Public */,
-      10,    1,   86,    2, 0x06 /* Public */,
+       1,    1,   84,    2, 0x06 /* Public */,
+       4,    1,   87,    2, 0x06 /* Public */,
+       6,    1,   90,    2, 0x06 /* Public */,
+       8,    1,   93,    2, 0x06 /* Public */,
+      10,    1,   96,    2, 0x06 /* Public */,
 
  // methods: name, argc, parameters, tag, flags
-      12,    1,   89,    2, 0x02 /* Public */,
-      12,    0,   92,    2, 0x22 /* Public | MethodCloned */,
-      14,    2,   93,    2, 0x02 /* Public */,
-      14,    1,   98,    2, 0x22 /* Public | MethodCloned */,
-      16,    1,  101,    2, 0x02 /* Public */,
-      18,    1,  104,    2, 0x02 /* Public */,
-      19,    1,  107,    2, 0x02 /* Public */,
+      12,    1,   99,    2, 0x02 /* Public */,
+      12,    0,  102,    2, 0x22 /* Public | MethodCloned */,
+      14,    2,  103,    2, 0x02 /* Public */,
+      14,    1,  108,    2, 0x22 /* Public | MethodCloned */,
+      16,    1,  111,    2, 0x02 /* Public */,
+      18,    1,  114,    2, 0x02 /* Public */,
+      19,    1,  117,    2, 0x02 /* Public */,
+      21,    1,  120,    2, 0x02 /* Public */,
+      23,    1,  123,    2, 0x02 /* Public */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QVariantList,    3,
@@ -107,6 +114,8 @@ static const uint qt_meta_data_MangaDexSource[] = {
     QMetaType::Void, QMetaType::QString,   17,
     QMetaType::Void, QMetaType::QString,   17,
     QMetaType::Void, QMetaType::QString,   20,
+    QMetaType::Void, QMetaType::QString,   22,
+    QMetaType::Void, QMetaType::QString,   24,
 
        0        // eod
 };
@@ -129,6 +138,8 @@ void MangaDexSource::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         case 9: _t->getMangaDetails((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         case 10: _t->getChapterList((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         case 11: _t->getPageList((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 12: _t->setBaseUrl((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 13: _t->setSourceName((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -200,13 +211,13 @@ int MangaDexSource::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 12)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 12;
+        _id -= 14;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 12)
+        if (_id < 14)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 12;
+        _id -= 14;
     }
     return _id;
 }
