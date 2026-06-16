@@ -39,7 +39,7 @@ void MangaDexSource::setSourceName(const QString &name)
 QNetworkRequest MangaDexSource::createRequest(const QUrl &url)
 {
     QNetworkRequest req(url);
-    req.setRawHeader("User-Agent", "HanaYomi/1.0.0 (contact@hanayomi.app)");
+    req.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     
     QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
     sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
@@ -450,66 +450,41 @@ QVariantList MangaDexSource::parseMadaraCatalog(const QString &html)
 {
     QVariantList results;
     QSet<QString> seenUrls;
-    
-    QRegularExpression itemRegex("<a[^>]+href=\"([^\"]+/manga/[^/]+/?)\"[^>]*>([\\s\\S]*?)</a>");
-    QRegularExpressionMatchIterator i = itemRegex.globalMatch(html);
-    
-    while (i.hasNext()) {
-        QRegularExpressionMatch match = i.next();
+
+    // Pola utama: href ke /manga/slug/ diikuti img dengan src dan alt=judul
+    // Cocok untuk Madara/MangaThemesia modern (Kiryuu, BacaKomik, dsb)
+    QRegularExpression cardRegex(
+        "href=\"([^\"]+/manga/[a-zA-Z0-9\\-]+/)\"[^>]*>[\\s\\S]{0,800}?<img[^>]+src=\"([^\"]+)\"[^>]+alt=\"([^\"]+)\"",
+        QRegularExpression::CaseInsensitiveOption
+    );
+    QRegularExpressionMatchIterator it = cardRegex.globalMatch(html);
+
+    while (it.hasNext() && results.size() < 24) {
+        QRegularExpressionMatch match = it.next();
         QString mangaUrl = match.captured(1);
-        
-        if (!mangaUrl.startsWith("http")) {
-            if (mangaUrl.startsWith("/")) {
-                mangaUrl = m_baseUrl + mangaUrl;
-            } else {
-                mangaUrl = m_baseUrl + "/" + mangaUrl;
-            }
-        }
-        
+        QString imgUrl   = match.captured(2);
+        QString title    = match.captured(3).trimmed();
+
+        if (mangaUrl.contains("/feed/") || mangaUrl.contains("/page/")) continue;
+        if (imgUrl.contains("logo") || imgUrl.contains("icon") || imgUrl.contains("banner")) continue;
+        bool validImg = imgUrl.contains(".jpg") || imgUrl.contains(".jpeg") ||
+                        imgUrl.contains(".png") || imgUrl.contains(".webp") ||
+                        imgUrl.contains("uploads") || imgUrl.contains("cover");
+        if (!validImg) continue;
+        if (title.length() < 2) continue;
+
+        if (!mangaUrl.startsWith("http"))
+            mangaUrl = mangaUrl.startsWith("/") ? m_baseUrl + mangaUrl : m_baseUrl + "/" + mangaUrl;
+
+        if (imgUrl.contains(" ")) imgUrl = imgUrl.split(" ")[0].trimmed();
+        if (!imgUrl.startsWith("http"))
+            imgUrl = imgUrl.startsWith("/") ? m_baseUrl + imgUrl : m_baseUrl + "/" + imgUrl;
+
         if (seenUrls.contains(mangaUrl)) continue;
         seenUrls.insert(mangaUrl);
-        
-        QString titleText = match.captured(2).trimmed();
-        titleText.remove(QRegularExpression("<[^>]*>"));
-        QString title = titleText.trimmed();
-        
-        if (title.isEmpty()) {
-            QStringList parts = mangaUrl.split("/", QString::SkipEmptyParts);
-            if (!parts.isEmpty()) {
-                title = parts.last();
-                title.replace("-", " ");
-                title = title.left(1).toUpper() + title.mid(1);
-            }
-        }
-        
-        int linkPos = match.capturedStart(0);
-        int startSearch = qMax(0, linkPos - 400);
-        int endSearch = qMin(html.length(), linkPos + match.capturedLength(0) + 400);
-        QString context = html.mid(startSearch, endSearch - startSearch);
-        
-        QRegularExpression imgRegex("<img[^>]+(?:src|data-src|data-lazy-src|lazy-src|srcset)=\"([^\"]+)\"");
-        QRegularExpressionMatch imgMatch = imgRegex.match(context);
-        QString thumbnailUrl;
-        if (imgMatch.hasMatch()) {
-            thumbnailUrl = imgMatch.captured(1);
-            if (thumbnailUrl.contains(" ")) {
-                thumbnailUrl = thumbnailUrl.split(" ")[0].trimmed(); // handle srcset fallback
-            }
-            if (!thumbnailUrl.startsWith("http")) {
-                if (thumbnailUrl.startsWith("/")) {
-                    thumbnailUrl = m_baseUrl + thumbnailUrl;
-                } else {
-                    thumbnailUrl = m_baseUrl + "/" + thumbnailUrl;
-                }
-            }
-        }
-        
-        if (thumbnailUrl.isEmpty()) {
-            continue; // Skip menu entries and text-only links
-        }
-        
-        QVariantMap m;
+
         QString mangaId = mangaUrl.split("/", QString::SkipEmptyParts).last();
+        QVariantMap m;
         m["id"]           = mangaId;
         m["url"]          = mangaUrl;
         m["title"]        = title;
@@ -517,14 +492,51 @@ QVariantList MangaDexSource::parseMadaraCatalog(const QString &html)
         m["author"]       = "Unknown";
         m["status"]       = 0;
         m["genre"]        = "Manga";
-        m["thumbnailUrl"] = thumbnailUrl;
+        m["thumbnailUrl"] = imgUrl;
         m["sourceId"]     = m_sourceName.toLower();
-        
         results.append(m);
-        if (results.size() >= 24) break;
     }
+
+    // Fallback: pola lama jika site menggunakan struktur berbeda
+    if (results.isEmpty()) {
+        QSet<QString> seenFallback;
+        QRegularExpression itemRegex("<a[^>]+href=\"([^\"]+/manga/[^/]+/?)\"[^>]*>([\\s\\S]*?)</a>");
+        QRegularExpressionMatchIterator i2 = itemRegex.globalMatch(html);
+        while (i2.hasNext() && results.size() < 24) {
+            QRegularExpressionMatch match = i2.next();
+            QString mangaUrl = match.captured(1);
+            if (!mangaUrl.startsWith("http"))
+                mangaUrl = mangaUrl.startsWith("/") ? m_baseUrl + mangaUrl : m_baseUrl + "/" + mangaUrl;
+            if (seenFallback.contains(mangaUrl)) continue;
+            seenFallback.insert(mangaUrl);
+
+            QString titleText = match.captured(2);
+            titleText.remove(QRegularExpression("<[^>]*>"));
+            QString title = titleText.trimmed();
+            if (title.length() < 2) continue;
+
+            int pos = match.capturedStart(0);
+            QString ctx = html.mid(qMax(0, pos - 500), 1200);
+            QRegularExpression imgR("<img[^>]+src=\"([^\"]+)\"");
+            QRegularExpressionMatch imgM = imgR.match(ctx);
+            if (!imgM.hasMatch()) continue;
+            QString imgUrl = imgM.captured(1).split(" ")[0].trimmed();
+            if (!imgUrl.startsWith("http"))
+                imgUrl = imgUrl.startsWith("/") ? m_baseUrl + imgUrl : m_baseUrl + "/" + imgUrl;
+
+            QString mangaId = mangaUrl.split("/", QString::SkipEmptyParts).last();
+            QVariantMap m;
+            m["id"] = mangaId; m["url"] = mangaUrl; m["title"] = title;
+            m["description"] = QString("Manga from %1").arg(m_sourceName);
+            m["author"] = "Unknown"; m["status"] = 0; m["genre"] = "Manga";
+            m["thumbnailUrl"] = imgUrl; m["sourceId"] = m_sourceName.toLower();
+            results.append(m);
+        }
+    }
+
     return results;
 }
+
 
 QVariantMap MangaDexSource::parseMadaraDetails(const QString &html, const QString &mangaId)
 {

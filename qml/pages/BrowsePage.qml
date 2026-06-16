@@ -59,32 +59,46 @@ Page {
         }
     }
 
+    // Daftar built-in sources yang sudah terbukti bisa diakses (Madara/MangaThemesia)
+    property var builtInSources: [
+        { "name": "MangaDex",  "pkg": "eu.kanade.tachiyomi.extension.en.mangadex", "lang": "en", "baseUrl": "https://api.mangadex.org" },
+        { "name": "Kiryuu",    "pkg": "eu.kanade.tachiyomi.extension.id.kiryuu",   "lang": "id", "baseUrl": "https://v6.kiryuu.to" },
+        { "name": "KlikManga", "pkg": "eu.kanade.tachiyomi.extension.id.klikmanga","lang": "id", "baseUrl": "https://klikmanga.org" },
+        { "name": "Doujinku",  "pkg": "eu.kanade.tachiyomi.extension.id.doujinku", "lang": "id", "baseUrl": "https://doujinku.org" },
+        { "name": "Kanzenin",  "pkg": "eu.kanade.tachiyomi.extension.id.kanzenin", "lang": "id", "baseUrl": "https://kanzenin.info" }
+    ]
+
     function refreshActiveSources() {
         activeSourcesModel.clear();
-        // Selalu sertakan MangaDex sebagai default built-in source
-        activeSourcesModel.append({
-            "name": "MangaDex",
-            "pkg": "eu.kanade.tachiyomi.extension.en.mangadex",
-            "lang": "en",
-            "isBuiltIn": true,
-            "baseUrl": "https://api.mangadex.org"
-        });
 
-        // Tambah ekstensi lain yang telah di-install
+        // Tambahkan semua built-in sources secara otomatis
+        for (var b = 0; b < builtInSources.length; b++) {
+            activeSourcesModel.append({
+                "name":      builtInSources[b].name,
+                "pkg":       builtInSources[b].pkg,
+                "lang":      builtInSources[b].lang,
+                "isBuiltIn": true,
+                "baseUrl":   builtInSources[b].baseUrl
+            });
+        }
+
+        // Tambah ekstensi lain yang telah di-install dari store
         var pkgs = JSON.parse(settings.installedPkgs);
+        var builtInPkgs = builtInSources.map(function(s){ return s.pkg; });
         for (var i = 0; i < extensionModel.count; i++) {
             var ext = extensionModel.get(i);
-            if (pkgs.indexOf(ext.pkg) !== -1 && ext.pkg !== "eu.kanade.tachiyomi.extension.en.mangadex") {
+            if (pkgs.indexOf(ext.pkg) !== -1 && builtInPkgs.indexOf(ext.pkg) === -1) {
                 activeSourcesModel.append({
-                    "name": ext.name.replace("Tachiyomi: ", ""),
-                    "pkg": ext.pkg,
-                    "lang": ext.lang,
+                    "name":      ext.name.replace("Tachiyomi: ", ""),
+                    "pkg":       ext.pkg,
+                    "lang":      ext.lang,
                     "isBuiltIn": false,
-                    "baseUrl": ext.baseUrl || ""
+                    "baseUrl":   ext.baseUrl || ""
                 });
             }
         }
     }
+
 
     function loadExtensions() {
         extensionModel.clear();
