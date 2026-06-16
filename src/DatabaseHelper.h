@@ -55,6 +55,12 @@ public:
     Q_INVOKABLE bool setMangaCategories(const QString &mangaId, const QVariantList &categoryIds);
     Q_INVOKABLE QVariantList getMangaCategories(const QString &mangaId);
     Q_INVOKABLE QVariantList getLibraryMangaFiltered(int categoryId, const QString &sortCol, const QString &sortOrder, const QString &filterStatus);
+    Q_INVOKABLE bool renameCategory(int id, const QString &newName);
+    Q_INVOKABLE int getLibraryCount();
+    Q_INVOKABLE int getReadChaptersCount();
+    Q_INVOKABLE QVariantList getGenreStats();
+    Q_INVOKABLE bool clearHistory();
+    Q_INVOKABLE bool clearAllCache();
 
 signals:
     void libraryChanged();

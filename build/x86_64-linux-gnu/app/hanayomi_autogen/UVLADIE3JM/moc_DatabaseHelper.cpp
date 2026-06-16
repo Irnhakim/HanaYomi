@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_DatabaseHelper_t {
-    QByteArrayData data[40];
-    char stringdata0[506];
+    QByteArrayData data[47];
+    char stringdata0[607];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -70,7 +70,14 @@ QT_MOC_LITERAL(35, 440, 23), // "getLibraryMangaFiltered"
 QT_MOC_LITERAL(36, 464, 10), // "categoryId"
 QT_MOC_LITERAL(37, 475, 7), // "sortCol"
 QT_MOC_LITERAL(38, 483, 9), // "sortOrder"
-QT_MOC_LITERAL(39, 493, 12) // "filterStatus"
+QT_MOC_LITERAL(39, 493, 12), // "filterStatus"
+QT_MOC_LITERAL(40, 506, 14), // "renameCategory"
+QT_MOC_LITERAL(41, 521, 7), // "newName"
+QT_MOC_LITERAL(42, 529, 15), // "getLibraryCount"
+QT_MOC_LITERAL(43, 545, 20), // "getReadChaptersCount"
+QT_MOC_LITERAL(44, 566, 13), // "getGenreStats"
+QT_MOC_LITERAL(45, 580, 12), // "clearHistory"
+QT_MOC_LITERAL(46, 593, 13) // "clearAllCache"
 
     },
     "DatabaseHelper\0libraryChanged\0\0"
@@ -87,7 +94,10 @@ QT_MOC_LITERAL(39, 493, 12) // "filterStatus"
     "name\0deleteCategory\0id\0setMangaCategories\0"
     "categoryIds\0getMangaCategories\0"
     "getLibraryMangaFiltered\0categoryId\0"
-    "sortCol\0sortOrder\0filterStatus"
+    "sortCol\0sortOrder\0filterStatus\0"
+    "renameCategory\0newName\0getLibraryCount\0"
+    "getReadChaptersCount\0getGenreStats\0"
+    "clearHistory\0clearAllCache"
 };
 #undef QT_MOC_LITERAL
 
@@ -97,7 +107,7 @@ static const uint qt_meta_data_DatabaseHelper[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      20,   14, // methods
+      26,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -105,28 +115,34 @@ static const uint qt_meta_data_DatabaseHelper[] = {
        2,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    0,  114,    2, 0x06 /* Public */,
-       3,    0,  115,    2, 0x06 /* Public */,
+       1,    0,  144,    2, 0x06 /* Public */,
+       3,    0,  145,    2, 0x06 /* Public */,
 
  // methods: name, argc, parameters, tag, flags
-       4,    0,  116,    2, 0x02 /* Public */,
-       5,    1,  117,    2, 0x02 /* Public */,
-       7,    2,  120,    2, 0x02 /* Public */,
-      10,    1,  125,    2, 0x02 /* Public */,
-      11,    1,  128,    2, 0x02 /* Public */,
-      12,    2,  131,    2, 0x02 /* Public */,
-      14,    3,  136,    2, 0x02 /* Public */,
-      14,    2,  143,    2, 0x22 /* Public | MethodCloned */,
-      18,    0,  148,    2, 0x02 /* Public */,
-      19,    6,  149,    2, 0x02 /* Public */,
-      24,    1,  162,    2, 0x02 /* Public */,
-      26,    0,  165,    2, 0x02 /* Public */,
-      27,    0,  166,    2, 0x02 /* Public */,
-      28,    1,  167,    2, 0x02 /* Public */,
-      30,    1,  170,    2, 0x02 /* Public */,
-      32,    2,  173,    2, 0x02 /* Public */,
-      34,    1,  178,    2, 0x02 /* Public */,
-      35,    4,  181,    2, 0x02 /* Public */,
+       4,    0,  146,    2, 0x02 /* Public */,
+       5,    1,  147,    2, 0x02 /* Public */,
+       7,    2,  150,    2, 0x02 /* Public */,
+      10,    1,  155,    2, 0x02 /* Public */,
+      11,    1,  158,    2, 0x02 /* Public */,
+      12,    2,  161,    2, 0x02 /* Public */,
+      14,    3,  166,    2, 0x02 /* Public */,
+      14,    2,  173,    2, 0x22 /* Public | MethodCloned */,
+      18,    0,  178,    2, 0x02 /* Public */,
+      19,    6,  179,    2, 0x02 /* Public */,
+      24,    1,  192,    2, 0x02 /* Public */,
+      26,    0,  195,    2, 0x02 /* Public */,
+      27,    0,  196,    2, 0x02 /* Public */,
+      28,    1,  197,    2, 0x02 /* Public */,
+      30,    1,  200,    2, 0x02 /* Public */,
+      32,    2,  203,    2, 0x02 /* Public */,
+      34,    1,  208,    2, 0x02 /* Public */,
+      35,    4,  211,    2, 0x02 /* Public */,
+      40,    2,  220,    2, 0x02 /* Public */,
+      42,    0,  225,    2, 0x02 /* Public */,
+      43,    0,  226,    2, 0x02 /* Public */,
+      44,    0,  227,    2, 0x02 /* Public */,
+      45,    0,  228,    2, 0x02 /* Public */,
+      46,    0,  229,    2, 0x02 /* Public */,
 
  // signals: parameters
     QMetaType::Void,
@@ -151,6 +167,12 @@ static const uint qt_meta_data_DatabaseHelper[] = {
     QMetaType::Bool, QMetaType::QString, QMetaType::QVariantList,    8,   33,
     QMetaType::QVariantList, QMetaType::QString,    8,
     QMetaType::QVariantList, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString,   36,   37,   38,   39,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString,   31,   41,
+    QMetaType::Int,
+    QMetaType::Int,
+    QMetaType::QVariantList,
+    QMetaType::Bool,
+    QMetaType::Bool,
 
        0        // eod
 };
@@ -199,6 +221,18 @@ void DatabaseHelper::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
         case 19: { QVariantList _r = _t->getLibraryMangaFiltered((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2])),(*reinterpret_cast< const QString(*)>(_a[3])),(*reinterpret_cast< const QString(*)>(_a[4])));
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
+        case 20: { bool _r = _t->renameCategory((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 21: { int _r = _t->getLibraryCount();
+            if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
+        case 22: { int _r = _t->getReadChaptersCount();
+            if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
+        case 23: { QVariantList _r = _t->getGenreStats();
+            if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
+        case 24: { bool _r = _t->clearHistory();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 25: { bool _r = _t->clearAllCache();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -249,13 +283,13 @@ int DatabaseHelper::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 20)
+        if (_id < 26)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 20;
+        _id -= 26;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 20)
+        if (_id < 26)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 20;
+        _id -= 26;
     }
     return _id;
 }

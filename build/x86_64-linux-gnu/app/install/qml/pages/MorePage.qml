@@ -8,13 +8,9 @@ Page {
 
     Rectangle { anchors.fill: parent; color: "#111111" }
 
-    header: PageHeader {
-        title: ""
-        StyleHints { foregroundColor: "white"; backgroundColor: "#111111"; dividerColor: "#111111" }
-    }
-
     Flickable {
-        anchors.top: parent.header.bottom
+        anchors.top: parent.top
+        anchors.topMargin: units.gu(3)
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -78,7 +74,8 @@ Page {
                         }
                         Switch {
                             anchors.verticalCenter: parent.verticalCenter
-                            checked: false
+                            checked: appSettings.downloadedOnly
+                            onCheckedChanged: appSettings.downloadedOnly = checked
                         }
                     }
                 }
@@ -103,7 +100,34 @@ Page {
                         }
                         Switch {
                             anchors.verticalCenter: parent.verticalCenter
-                            checked: false
+                            checked: appSettings.incognitoMode
+                            onCheckedChanged: appSettings.incognitoMode = checked
+                        }
+                    }
+                }
+                Rectangle { width: parent.width; height: units.dp(1); color: "#1E1E1E" }
+
+                // NSFW content Toggle
+                Item {
+                    width: parent.width
+                    height: units.gu(8)
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: units.gu(2)
+                        anchors.rightMargin: units.gu(2)
+                        spacing: units.gu(2)
+
+                        Icon { name: "lock"; width: units.gu(3); height: units.gu(3); color: "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Column {
+                            width: parent.width - units.gu(3) - units.gu(2) - units.gu(6)
+                            anchors.verticalCenter: parent.verticalCenter
+                            Label { text: "NSFW content"; color: "white"; font.pixelSize: units.gu(1.9) }
+                            Label { text: "Show 18+ extensions and sources"; color: "#888888"; font.pixelSize: units.gu(1.5) }
+                        }
+                        Switch {
+                            anchors.verticalCenter: parent.verticalCenter
+                            checked: appSettings.nsfwEnabled
+                            onCheckedChanged: appSettings.nsfwEnabled = checked
                         }
                     }
                 }
@@ -117,10 +141,10 @@ Page {
 
                 Repeater {
                     model: [
-                        { label: "Download queue",  icon: "save"     },
-                        { label: "Categories",       icon: "tag"      },
-                        { label: "Statistics",       icon: "stock_sms"},
-                        { label: "Data and storage", icon: "storage"  }
+                        { label: "Download queue",  icon: "save",        page: "" },
+                        { label: "Categories",       icon: "tag",         page: "CategoriesPage.qml" },
+                        { label: "Statistics",       icon: "clock",       page: "StatsPage.qml" },
+                        { label: "Data and storage", icon: "folder",      page: "DataStoragePage.qml" }
                     ]
                     Item {
                         width: parent.width
@@ -133,7 +157,14 @@ Page {
                             Label { text: modelData.label; color: "white"; font.pixelSize: units.gu(1.9); anchors.verticalCenter: parent.verticalCenter }
                         }
                         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: units.dp(1); color: "#1E1E1E" }
-                        MouseArea { anchors.fill: parent }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (modelData.page !== "" && mainStack) {
+                                    mainStack.push(Qt.resolvedUrl(modelData.page))
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -144,10 +175,10 @@ Page {
                 width: parent.width
                 Repeater {
                     model: [
-                        { label: "Settings",    icon: "settings" },
-                        { label: "Support Us",  icon: "like"     },
-                        { label: "About",       icon: "info"     },
-                        { label: "Help",        icon: "help"     }
+                        { label: "Settings",    icon: "settings", page: "" },
+                        { label: "Support Us",  icon: "like",     page: "" },
+                        { label: "About",       icon: "info",     page: "" },
+                        { label: "Help",        icon: "help",     page: "" }
                     ]
                     Item {
                         width: parent.width
@@ -160,7 +191,14 @@ Page {
                             Label { text: modelData.label; color: "white"; font.pixelSize: units.gu(1.9); anchors.verticalCenter: parent.verticalCenter }
                         }
                         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: units.dp(1); color: "#1E1E1E" }
-                        MouseArea { anchors.fill: parent }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                if (modelData.page !== "" && mainStack) {
+                                    mainStack.push(Qt.resolvedUrl(modelData.page))
+                                }
+                            }
+                        }
                     }
                 }
             }

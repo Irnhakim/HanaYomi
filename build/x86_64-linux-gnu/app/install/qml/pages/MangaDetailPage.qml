@@ -339,9 +339,11 @@ Page {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                // Rekam history
-                                db.upsertHistory(model.id, mangaId, model.name,
-                                    model.chapterNumber, mangaTitle, mangaCover)
+                                // Rekam history jika tidak dalam mode penyamaran
+                                if (!appSettings.incognitoMode) {
+                                    db.upsertHistory(model.id, mangaId, model.name,
+                                        model.chapterNumber, mangaTitle, mangaCover)
+                                }
                                 if (mainStack) {
                                     mainStack.push(Qt.resolvedUrl("ReaderPage.qml"), {
                                         chapterId: model.id,

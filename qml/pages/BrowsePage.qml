@@ -10,6 +10,16 @@ Page {
     property int activeTab: 0
     property bool isLoadingExtensions: false
     property string selectedSource: "" // "" berarti tampilkan daftar source, lainnya tampilkan isi manga source tersebut
+    property string globalSearchQuery: ""
+    property string extensionSearchQuery: ""
+    property string selectedLanguageFilter: "All"
+    property string layoutMode: "comfortable"
+
+    onVisibleChanged: {
+        if (visible) {
+            loadExtensions();
+        }
+    }
 
     Rectangle { anchors.fill: parent; color: "#111111" }
 
@@ -17,6 +27,7 @@ Page {
         id: settings
         category: "Extensions"
         property string installedPkgs: "[]"
+        property string extensionRepos: "[]"
     }
 
     ListModel { id: extensionModel }
@@ -74,41 +85,75 @@ Page {
     }
 
     function loadExtensions() {
-        if (extensionModel.count > 0) {
+        extensionModel.clear();
+        var repos = [];
+        try {
+            repos = JSON.parse(settings.extensionRepos);
+        } catch(e) {}
+        
+        if (repos.length === 0) {
             refreshActiveSources();
             return;
         }
-        isLoadingExtensions = true
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                isLoadingExtensions = false
-                if (xhr.status === 200) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        extensionModel.clear();
-                        for (var i = 0; i < data.length; i++) {
-                            var ext = data[i];
-                            extensionModel.append({
-                                "name": ext.name || "",
-                                "pkg": ext.pkg || "",
-                                "version": ext.version || "",
-                                "lang": ext.lang || "",
-                                "nsfw": ext.nsfw === 1,
-                                "apk": ext.apk || ""
-                            });
-                        }
-                        refreshActiveSources();
-                    } catch (e) {
-                        console.log("Failed to parse extensions JSON:", e);
-                    }
+
+        isLoadingExtensions = true;
+        var activeRequests = repos.length;
+
+        repos.forEach(function(repo) {
+            var url = repo.url;
+            if (url.endsWith("repo.json")) {
+                url = url.replace("repo.json", "index.min.json");
+            } else if (!url.endsWith("index.min.json")) {
+                if (url.endsWith("/")) {
+                    url += "index.min.json";
                 } else {
-                    console.log("Failed to fetch extensions:", xhr.statusText);
+                    url += "/index.min.json";
                 }
             }
-        }
-        xhr.open("GET", "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json");
-        xhr.send();
+
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    activeRequests--;
+                    if (activeRequests <= 0) {
+                        isLoadingExtensions = false;
+                    }
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            for (var i = 0; i < data.length; i++) {
+                                var ext = data[i];
+                                // Cek duplikasi paket
+                                var found = false;
+                                for (var j = 0; j < extensionModel.count; j++) {
+                                    if (extensionModel.get(j).pkg === ext.pkg) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    extensionModel.append({
+                                        "name": ext.name || "",
+                                        "pkg": ext.pkg || "",
+                                        "version": ext.version || "",
+                                        "lang": ext.lang || "",
+                                        "nsfw": ext.nsfw === 1,
+                                        "apk": ext.apk || ""
+                                    });
+                                }
+                            }
+                            refreshActiveSources();
+                        } catch (e) {
+                            console.log("Failed to parse extensions JSON from " + url + ":", e);
+                        }
+                    } else {
+                        console.log("Failed to fetch extensions from " + url + ":", xhr.statusText);
+                    }
+                }
+            }
+            xhr.open("GET", url);
+            xhr.send();
+        });
     }
 
     // Koneksikan sinyal dari C++ MangaDexSource
@@ -142,6 +187,19 @@ Page {
                 iconName: "back"
                 visible: selectedSource !== ""
                 onTriggered: selectedSource = ""
+            }
+        ]
+
+        trailingActionBar.actions: [
+            Action {
+                iconName: "navigation-menu"
+                visible: selectedSource === ""
+                onTriggered: mainBrowseDropdown.visible = !mainBrowseDropdown.visible
+            },
+            Action {
+                iconSource: Qt.resolvedUrl("../assets/ic_grid.svg")
+                visible: selectedSource !== ""
+                onTriggered: layoutSelectorDropdown.visible = !layoutSelectorDropdown.visible
             }
         ]
     }
@@ -199,6 +257,141 @@ Page {
 
         Rectangle { visible: selectedSource === ""; width: parent.width; height: visible ? units.dp(1) : 0; color: "#2A2A2A" }
 
+        // Search & Filter Section
+        Column {
+            visible: selectedSource === ""
+            width: parent.width
+            spacing: units.gu(1.2)
+            bottomPadding: units.gu(1)
+            topPadding: units.gu(1.5)
+
+            // Search Bar
+            Rectangle {
+                width: parent.width - units.gu(4)
+                height: units.gu(4.8)
+                anchors.horizontalCenter: parent.horizontalCenter
+                color: "#1E1E1E"
+                border.color: "#2A2A2A"
+                radius: units.dp(8)
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: units.gu(1.5)
+                    anchors.rightMargin: units.gu(1.5)
+                    spacing: units.gu(1)
+
+                    Icon {
+                        name: "search"
+                        width: units.gu(2.2)
+                        height: units.gu(2.2)
+                        color: "#888888"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    TextField {
+                        id: searchFieldInput
+                        width: parent.width - units.gu(6)
+                        height: parent.height
+                        placeholderText: browsePage.activeTab === 0 ? "Global search manga..." : "Search extensions..."
+                        color: "white"
+                        font.pixelSize: units.gu(1.6)
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: browsePage.activeTab === 0 ? browsePage.globalSearchQuery : browsePage.extensionSearchQuery
+
+                        onTextChanged: {
+                            if (browsePage.activeTab === 0) {
+                                // Sync back text
+                            } else {
+                                browsePage.extensionSearchQuery = text.trim();
+                            }
+                        }
+
+                        onAccepted: {
+                            if (browsePage.activeTab === 0) {
+                                var query = text.trim();
+                                browsePage.globalSearchQuery = query;
+                                if (query !== "") {
+                                    browsePage.isLoading = true;
+                                    mangaModel.clear();
+                                    mangaDex.searchManga(query, 1);
+                                }
+                            }
+                        }
+                    }
+
+                    // Clear button
+                    Icon {
+                        name: "close"
+                        width: units.gu(2)
+                        height: units.gu(2)
+                        color: "#888888"
+                        visible: searchFieldInput.text !== ""
+                        anchors.verticalCenter: parent.verticalCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                searchFieldInput.text = "";
+                                if (browsePage.activeTab === 0) {
+                                    browsePage.globalSearchQuery = "";
+                                    mangaModel.clear();
+                                } else {
+                                    browsePage.extensionSearchQuery = "";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Language Filter Chips
+            Flickable {
+                width: parent.width
+                height: units.gu(4.5)
+                contentWidth: filterRow.width + units.gu(4)
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                flickableDirection: Flickable.HorizontalFlick
+
+                Row {
+                    id: filterRow
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: units.gu(2)
+                    spacing: units.gu(1)
+
+                    Repeater {
+                        model: [
+                            { label: "All", code: "All" },
+                            { label: "English", code: "en" },
+                            { label: "Indonesian", code: "id" },
+                            { label: "Japanese", code: "ja" }
+                        ]
+                        delegate: Rectangle {
+                            width: filterLabel.implicitWidth + units.gu(3)
+                            height: units.gu(3.2)
+                            radius: height / 2
+                            color: browsePage.selectedLanguageFilter === modelData.code ? "#264A90D9" : "#1E1E1E"
+                            border.color: browsePage.selectedLanguageFilter === modelData.code ? "#4A90D9" : "#2A2A2A"
+
+                            Label {
+                                id: filterLabel
+                                anchors.centerIn: parent
+                                text: modelData.label
+                                color: browsePage.selectedLanguageFilter === modelData.code ? "#4A90D9" : "#888888"
+                                font.bold: browsePage.selectedLanguageFilter === modelData.code
+                                font.pixelSize: units.gu(1.4)
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: browsePage.selectedLanguageFilter = modelData.code
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ---- VIEW 1: Browsing list manga dalam source tertentu ----
         Item {
             visible: selectedSource !== ""
@@ -235,12 +428,96 @@ Page {
                 }
             }
 
+            // Sub-header filter buttons
+            Row {
+                id: sourceFiltersRow
+                width: parent.width - units.gu(4)
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: searchBarContainer.bottom
+                height: units.gu(5)
+                spacing: units.gu(1.5)
+
+                property string activeFilter: "popular"
+
+                Rectangle {
+                    width: (parent.width - units.gu(3)) / 3
+                    height: units.gu(4)
+                    radius: units.dp(6)
+                    color: parent.activeFilter === "popular" ? "#264A90D9" : "#1E1E1E"
+                    border.color: parent.activeFilter === "popular" ? "#4A90D9" : "#2A2A2A"
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: units.dp(6)
+                        Icon { name: "like"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "popular" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Popular"; color: parent.parent.parent.activeFilter === "popular" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "popular"; anchors.verticalCenter: parent.verticalCenter }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            sourceFiltersRow.activeFilter = "popular"
+                            browsePage.isLoading = true
+                            mangaModel.clear()
+                            mangaDex.getPopularManga(1)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: (parent.width - units.gu(3)) / 3
+                    height: units.gu(4)
+                    radius: units.dp(6)
+                    color: parent.activeFilter === "latest" ? "#264A90D9" : "#1E1E1E"
+                    border.color: parent.activeFilter === "latest" ? "#4A90D9" : "#2A2A2A"
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: units.dp(6)
+                        Icon { name: "clock"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "latest" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Latest"; color: parent.parent.parent.activeFilter === "latest" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "latest"; anchors.verticalCenter: parent.verticalCenter }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            sourceFiltersRow.activeFilter = "latest"
+                            browsePage.isLoading = true
+                            mangaModel.clear()
+                            mangaDex.getPopularManga(1)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: (parent.width - units.gu(3)) / 3
+                    height: units.gu(4)
+                    radius: units.dp(6)
+                    color: parent.activeFilter === "filter" ? "#264A90D9" : "#1E1E1E"
+                    border.color: parent.activeFilter === "filter" ? "#4A90D9" : "#2A2A2A"
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: units.dp(6)
+                        Icon { name: "settings"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "filter" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Filter"; color: parent.parent.parent.activeFilter === "filter" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "filter"; anchors.verticalCenter: parent.verticalCenter }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            sourceFiltersRow.activeFilter = "filter"
+                        }
+                    }
+                }
+            }
+
             // Loading indicator
             Item {
                 visible: browsePage.isLoading
                 width: parent.width
                 height: units.gu(6)
-                anchors.top: searchBarContainer.bottom
+                anchors.top: sourceFiltersRow.bottom
                 ActivityIndicator { running: parent.visible; anchors.centerIn: parent }
             }
 
@@ -250,7 +527,7 @@ Page {
                 visible: errorLabel.text !== "" && !browsePage.isLoading
                 width: parent.width
                 height: errorLabel.implicitHeight + units.gu(4)
-                anchors.top: searchBarContainer.bottom
+                anchors.top: sourceFiltersRow.bottom
 
                 Label {
                     id: errorLabel
@@ -263,12 +540,12 @@ Page {
                 }
             }
 
-            // List of manga
+            // List View Layout
             ListView {
-                anchors.top: searchBarContainer.bottom
+                anchors.top: sourceFiltersRow.bottom
                 anchors.bottom: parent.bottom
                 width: parent.width
-                visible: !browsePage.isLoading
+                visible: !browsePage.isLoading && browsePage.layoutMode === "list"
                 model: mangaModel
                 clip: true
 
@@ -325,12 +602,7 @@ Page {
                                 font.pixelSize: units.gu(1.5)
                             }
                             Label {
-                                text: {
-                                    var s = model.status
-                                    if (s === 1) return "Ongoing"
-                                    if (s === 2) return "Completed"
-                                    return ""
-                                }
+                                text: model.status === 1 ? "Ongoing" : (model.status === 2 ? "Completed" : "")
                                 color: model.status === 1 ? "#4CAF50" : "#888888"
                                 font.pixelSize: units.gu(1.4)
                             }
@@ -358,19 +630,145 @@ Page {
                     }
                 }
             }
+
+            // Grid View Layout (Mihon Style: Comfortable & Compact)
+            GridView {
+                id: mangaGridView
+                anchors.top: sourceFiltersRow.bottom
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: units.gu(2)
+                anchors.rightMargin: units.gu(2)
+                visible: !browsePage.isLoading && browsePage.layoutMode !== "list"
+                model: mangaModel
+                clip: true
+                cellWidth: browsePage.layoutMode === "comfortable" ? (width / 2) : (width / 3)
+                cellHeight: browsePage.layoutMode === "comfortable" ? units.gu(25) : units.gu(18)
+
+                delegate: Item {
+                    width: mangaGridView.cellWidth - units.gu(1)
+                    height: mangaGridView.cellHeight - units.gu(1)
+
+                    // Comfortable layout (cover + separate title below)
+                    Column {
+                        anchors.fill: parent
+                        spacing: units.gu(0.8)
+                        visible: browsePage.layoutMode === "comfortable"
+
+                        Rectangle {
+                            width: parent.width
+                            height: units.gu(18)
+                            color: "#2A2A2A"
+                            radius: units.dp(8)
+                            clip: true
+
+                            Image {
+                                anchors.fill: parent
+                                source: model.thumbnailUrl || ""
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                            }
+                            Label {
+                                visible: model.thumbnailUrl === ""
+                                anchors.centerIn: parent
+                                text: model.title ? model.title.charAt(0).toUpperCase() : "?"
+                                color: "white"
+                                font.bold: true
+                                font.pixelSize: units.gu(3)
+                            }
+                        }
+
+                        Label {
+                            text: model.title || ""
+                            color: "white"
+                            font.pixelSize: units.gu(1.5)
+                            font.bold: true
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    // Compact layout (full cover + semi-transparent text overlay at the bottom)
+                    Rectangle {
+                        anchors.fill: parent
+                        visible: browsePage.layoutMode === "compact"
+                        color: "#2A2A2A"
+                        radius: units.dp(8)
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: model.thumbnailUrl || ""
+                            fillMode: Image.PreserveAspectCrop
+                            smooth: true
+                        }
+                        Label {
+                            visible: model.thumbnailUrl === ""
+                            anchors.centerIn: parent
+                            text: model.title ? model.title.charAt(0).toUpperCase() : "?"
+                            color: "white"
+                            font.bold: true
+                            font.pixelSize: units.gu(3)
+                        }
+
+                        // Bottom overlay for the title
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width
+                            height: units.gu(4.5)
+                            color: "#CC000000"
+
+                            Label {
+                                anchors.fill: parent
+                                anchors.margins: units.gu(0.5)
+                                text: model.title || ""
+                                color: "white"
+                                font.pixelSize: units.gu(1.3)
+                                font.bold: true
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                wrapMode: Text.WordWrap
+                                maximumLineCount: 2
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            if (mainStack) {
+                                mainStack.push(Qt.resolvedUrl("MangaDetailPage.qml"), {
+                                    mangaId: model.id,
+                                    mangaTitle: model.title,
+                                    mangaDesc: model.description,
+                                    mangaCover: model.thumbnailUrl,
+                                    mangaAuthor: model.author,
+                                    mangaStatus: model.status,
+                                    mangaGenre: model.genre,
+                                    mainStack: mainStack
+                                })
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // ---- VIEW 2: Daftar Active Sources (Tab 0) ----
         ListView {
-            visible: selectedSource === "" && browsePage.activeTab === 0
+            visible: selectedSource === "" && browsePage.activeTab === 0 && browsePage.globalSearchQuery === ""
             width: parent.width
-            height: parent.height - units.gu(5.5)
+            height: parent.height - units.gu(18.5)
             clip: true
             model: activeSourcesModel
 
             delegate: Item {
                 width: parent.width
-                height: units.gu(8)
+                property bool matchesLanguage: browsePage.selectedLanguageFilter === "All" || model.lang.toLowerCase() === browsePage.selectedLanguageFilter.toLowerCase()
+                visible: matchesLanguage
+                height: visible ? units.gu(8) : 0
+                clip: true
 
                 Row {
                     anchors.fill: parent
@@ -382,14 +780,19 @@ Page {
                         width: units.gu(5)
                         height: units.gu(5)
                         anchors.verticalCenter: parent.verticalCenter
-                        color: model.isBuiltIn ? "#1A3A6A" : "#2A2A2A"
+                        color: "transparent"
                         radius: units.dp(8)
-                        Label {
-                            anchors.centerIn: parent
-                            text: model.name.charAt(0)
-                            color: "white"
-                            font.bold: true
-                            font.pixelSize: units.gu(2.2)
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: model.pkg ? "https://raw.githubusercontent.com/keiyoushi/extensions/repo/icon/" + model.pkg + ".png" : "../assets/ic_default_source.webp"
+                            fillMode: Image.PreserveAspectFit
+                            onStatusChanged: {
+                                if (status === Image.Error) {
+                                    source = "../assets/ic_default_source.webp"
+                                }
+                            }
                         }
                     }
 
@@ -440,11 +843,108 @@ Page {
             }
         }
 
+        // ---- VIEW 2B: Global Search Results (Tab 0 ketika mencari secara global) ----
+        ListView {
+            visible: selectedSource === "" && browsePage.activeTab === 0 && browsePage.globalSearchQuery !== ""
+            width: parent.width
+            height: parent.height - units.gu(18.5)
+            clip: true
+            model: mangaModel
+
+            header: Item {
+                width: parent.width
+                height: units.gu(6)
+                Label {
+                    anchors.left: parent.left
+                    anchors.leftMargin: units.gu(2)
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: browsePage.isLoading ? "Searching sources..." : "Search Results (" + mangaModel.count + ")"
+                    color: "#4A90D9"
+                    font.bold: true
+                    font.pixelSize: units.gu(1.7)
+                }
+            }
+
+            delegate: Item {
+                width: parent.width
+                height: units.gu(10)
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: units.gu(2)
+                    anchors.rightMargin: units.gu(2)
+                    spacing: units.gu(2)
+
+                    Rectangle {
+                        width: units.gu(7)
+                        height: units.gu(9)
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: "#2A2A2A"
+                        radius: units.dp(6)
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: model.thumbnailUrl || ""
+                            fillMode: Image.PreserveAspectCrop
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - units.gu(18)
+                        spacing: units.dp(4)
+
+                        Label {
+                            text: model.title || ""
+                            color: "white"
+                            font.pixelSize: units.gu(1.8)
+                            font.bold: true
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+
+                        Label {
+                            text: "Source: MangaDex • " + (model.author || "Unknown")
+                            color: "#888888"
+                            font.pixelSize: units.gu(1.4)
+                        }
+                    }
+
+                    Label {
+                        text: model.status === 1 ? "Ongoing" : (model.status === 2 ? "Completed" : "")
+                        color: model.status === 1 ? "#4CAF50" : "#888888"
+                        font.pixelSize: units.gu(1.3)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        if (mainStack) {
+                            mainStack.push(Qt.resolvedUrl("MangaDetailPage.qml"), {
+                                mangaId: model.id,
+                                mangaTitle: model.title,
+                                mangaDesc: model.description,
+                                mangaCover: model.thumbnailUrl,
+                                mangaAuthor: model.author,
+                                mangaStatus: model.status,
+                                mangaGenre: model.genre,
+                                mainStack: mainStack
+                            })
+                        }
+                    }
+                }
+                Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: units.dp(1); color: "#1E1E1E" }
+            }
+        }
+
         // ---- VIEW 3: Daftar Extensions Store (Tab 1) ----
         Item {
             visible: selectedSource === "" && browsePage.activeTab === 1
             width: parent.width
-            height: parent.height - units.gu(5.5)
+            height: parent.height - units.gu(18.5)
 
             ActivityIndicator {
                 anchors.centerIn: parent
@@ -454,7 +954,7 @@ Page {
 
             ListView {
                 anchors.fill: parent
-                visible: !browsePage.isLoadingExtensions
+                visible: !browsePage.isLoadingExtensions && extensionModel.count > 0
                 clip: true
                 model: extensionModel
                 header: Item {
@@ -471,7 +971,12 @@ Page {
                 }
                 delegate: Item {
                     width: parent.width
-                    height: units.gu(8)
+                    property bool matchesLanguage: browsePage.selectedLanguageFilter === "All" || model.lang.toLowerCase() === browsePage.selectedLanguageFilter.toLowerCase()
+                    property bool matchesSearch: browsePage.extensionSearchQuery === "" || model.name.toLowerCase().indexOf(browsePage.extensionSearchQuery.toLowerCase()) !== -1
+                    property bool matchesNsfw: !model.nsfw || appSettings.nsfwEnabled
+                    visible: matchesLanguage && matchesSearch && matchesNsfw
+                    height: visible ? units.gu(8) : 0
+                    clip: true
                     
                     // Cek status secara reaktif
                     property bool installed: browsePage.isInstalled(model.pkg)
@@ -497,18 +1002,9 @@ Page {
                                 smooth: true
                                 onStatusChanged: {
                                     if (status === Image.Error) {
-                                        fallbackText.visible = true
+                                        source = "../assets/ic_default_source.webp"
                                     }
                                 }
-                            }
-                            Label {
-                                id: fallbackText
-                                visible: false
-                                anchors.centerIn: parent
-                                text: model.name ? model.name.replace("Tachiyomi: ", "").charAt(0).toUpperCase() : "?"
-                                color: "white"
-                                font.bold: true
-                                font.pixelSize: units.gu(2.5)
                             }
                         }
 
@@ -560,6 +1056,173 @@ Page {
                         }
                     }
                     Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: units.dp(1); color: "#1E1E1E" }
+                }
+            }
+
+            Label {
+                visible: !browsePage.isLoadingExtensions && extensionModel.count === 0
+                anchors.centerIn: parent
+                width: parent.width - units.gu(4)
+                horizontalAlignment: Text.AlignHCenter
+                text: "No extension stores configured.\nTap the menu in the top right and select 'Extension stores' to add a repository."
+                color: "#888888"
+                font.pixelSize: units.gu(1.6)
+            }
+        }
+    }
+
+    // Popover layout selector dropdown
+    MouseArea {
+        anchors.fill: parent
+        visible: layoutSelectorDropdown.visible
+        onClicked: layoutSelectorDropdown.visible = false
+        z: 9998
+    }
+
+    Rectangle {
+        id: layoutSelectorDropdown
+        visible: false
+        anchors.top: parent.header.bottom
+        anchors.topMargin: units.dp(4)
+        anchors.right: parent.right
+        anchors.rightMargin: units.gu(2)
+        width: units.gu(24)
+        height: units.gu(15)
+        color: "#1E1E1E"
+        border.color: "#2A2A2A"
+        radius: units.dp(8)
+        z: 9999
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: units.gu(1)
+            spacing: 0
+
+            Repeater {
+                model: [
+                    { label: "Comfortable Grid", mode: "comfortable", icon: "view-grid" },
+                    { label: "Compact Grid",     mode: "compact",     icon: "view-grid" },
+                    { label: "List",             mode: "list",        icon: "view-list" }
+                ]
+                delegate: Item {
+                    width: parent.width
+                    height: units.gu(4.3)
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: browsePage.layoutMode === modelData.mode ? "#264A90D9" : "transparent"
+                        radius: units.dp(4)
+                    }
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: units.gu(1)
+                        spacing: units.gu(1.5)
+
+                        Icon {
+                            name: modelData.icon
+                            width: units.gu(2.2)
+                            height: units.gu(2.2)
+                            color: browsePage.layoutMode === modelData.mode ? "#4A90D9" : "#888888"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Label {
+                            text: modelData.label
+                            color: browsePage.layoutMode === modelData.mode ? "#4A90D9" : "white"
+                            font.pixelSize: units.gu(1.5)
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            browsePage.layoutMode = modelData.mode
+                            layoutSelectorDropdown.visible = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Popover main browse menu dropdown
+    MouseArea {
+        anchors.fill: parent
+        visible: mainBrowseDropdown.visible
+        onClicked: mainBrowseDropdown.visible = false
+        z: 9996
+    }
+
+    Rectangle {
+        id: mainBrowseDropdown
+        visible: false
+        anchors.top: parent.header.bottom
+        anchors.topMargin: units.dp(4)
+        anchors.right: parent.right
+        anchors.rightMargin: units.gu(2)
+        width: units.gu(22)
+        height: units.gu(10.5)
+        color: "#1E1E1E"
+        border.color: "#2A2A2A"
+        radius: units.dp(8)
+        z: 9997
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: units.gu(1)
+            spacing: 0
+
+            Repeater {
+                model: [
+                    { label: "Filter", icon: "settings" },
+                    { label: "Extension stores", icon: "folder" }
+                ]
+                delegate: Item {
+                    width: parent.width
+                    height: units.gu(4.3)
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        radius: units.dp(4)
+                    }
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: units.gu(1)
+                        spacing: units.gu(1.5)
+
+                        Icon {
+                            name: modelData.icon
+                            width: units.gu(2.2)
+                            height: units.gu(2.2)
+                            color: "#888888"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Label {
+                            text: modelData.label
+                            color: "white"
+                            font.pixelSize: units.gu(1.5)
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            mainBrowseDropdown.visible = false
+                            if (modelData.label === "Extension stores") {
+                                if (mainStack) {
+                                    mainStack.push(Qt.resolvedUrl("ExtensionStoresPage.qml"), {
+                                        mainStack: mainStack
+                                    })
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

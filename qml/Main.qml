@@ -1,5 +1,6 @@
 import QtQuick 2.9
 import Lomiri.Components 1.3
+import Qt.labs.settings 1.0
 import "pages"
 
 MainView {
@@ -8,6 +9,14 @@ MainView {
     applicationName: "hanayomi.hakim"
     automaticOrientation: true
     visible: true
+
+    Settings {
+        id: appSettings
+        category: "General"
+        property bool incognitoMode: false
+        property bool downloadedOnly: false
+        property bool nsfwEnabled: false
+    }
 
     width: units.gu(50)
     height: units.gu(80)
@@ -87,7 +96,7 @@ MainView {
                                 width: units.gu(8)
                                 height: units.gu(3.2)
                                 radius: height / 2
-                                color: "#1A3A6A"
+                                color: "#264A90D9"
                                 Behavior on opacity { NumberAnimation { duration: 150 } }
                             }
 

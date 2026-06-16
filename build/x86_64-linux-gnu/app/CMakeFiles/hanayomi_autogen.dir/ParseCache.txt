@@ -4,5 +4,5 @@
  mmc:Q_OBJECT
 /home/hakim/Projects/HanaYomi/src/MangaDexSource.h
  mmc:Q_OBJECT
-/home/hakim/Projects/HanaYomi/src/main.cpp
 /home/hakim/Projects/HanaYomi/src/DatabaseHelper.cpp
+/home/hakim/Projects/HanaYomi/src/main.cpp

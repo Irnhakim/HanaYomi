@@ -102,7 +102,13 @@ Page {
 
         delegate: Item {
             width: pageListView.width
-            height: pageListView.height
+            height: {
+                if (readerPage.readingMode === "webtoon") {
+                    return (pageImage.implicitWidth > 0) ? (width * pageImage.implicitHeight / pageImage.implicitWidth) : pageListView.height
+                } else {
+                    return pageListView.height
+                }
+            }
 
             Image {
                 id: pageImage
