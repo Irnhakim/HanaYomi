@@ -14,10 +14,7 @@ HanaYomi is a beautiful, premium, and native manga reader application designed f
 - **Custom Network Factory**: Bypasses typical MangaDex API blocks via global QML User-Agent header injection (`HanaYomi/1.0.0`).
 ---
 ## Screenshots
-*(Place screenshots here)*
-| Library View | Detail Page | Webtoon Reader |
-|---|---|---|
-| ![Library](qml/assets/logo.png) | ![Detail](qml/assets/logo.png) | ![Reader](qml/assets/logo.png) |
+Upcomming...
 ---
 ## Installation
 ### Prerequisites
