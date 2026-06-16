@@ -1090,6 +1090,8 @@ CMakeFiles/hanayomi.dir/src/MangaDexSource.cpp.o: ../../../src/MangaDexSource.cp
   /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
   /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
   /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h \
   /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
   /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
   /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
@@ -1627,6 +1629,8 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qquaternion.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qvector4d.h:
+
 /usr/include/c++/9/bits/erase_if.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtSql/QSqlDatabase:
@@ -1660,6 +1664,10 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 /usr/include/c++/9/cerrno:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qvector3d.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qmetatype.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QNetworkRequest:
 
@@ -1999,6 +2007,8 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QMetaType:
 
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h:
+
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qobjectdefs.h:
@@ -2068,10 +2078,6 @@ hanayomi_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/bits/types/time_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qmetatype.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qvector3d.h:
 
 /usr/include/stdio.h:
 
@@ -2361,8 +2367,6 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qcontiguouscache.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qsharedpointer.h:
-
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qimage.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qsharedpointer_impl.h:
@@ -2437,6 +2441,10 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QUrlQuery:
 
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qsharedpointer.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression:
+
 /usr/include/x86_64-linux-gnu/qt5/QtGui/QGuiApplication:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qopengl.h:
@@ -2470,5 +2478,3 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 /usr/include/x86_64-linux-gnu/qt5/QtGui/QMatrix4x4:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qmatrix4x4.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qvector4d.h:

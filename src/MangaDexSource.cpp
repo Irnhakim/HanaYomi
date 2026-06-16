@@ -451,7 +451,7 @@ QVariantList MangaDexSource::parseMadaraCatalog(const QString &html)
     QVariantList results;
     QSet<QString> seenUrls;
     
-    QRegularExpression itemRegex("<a[^>]+href=\"([^\"]+/manga/[^/]+/??)\"[^>]*>([\\s\\S]*?)</a>");
+    QRegularExpression itemRegex("<a[^>]+href=\"([^\"]+/manga/[^/]+/?)\"[^>]*>([\\s\\S]*?)</a>");
     QRegularExpressionMatchIterator i = itemRegex.globalMatch(html);
     
     while (i.hasNext()) {
