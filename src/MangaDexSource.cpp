@@ -1,63 +1,164 @@
 #include "MangaDexSource.h"
 #include <QDebug>
 #include <QDateTime>
-#include <QNetworkReply>
-#include <QSslError>
 #include <QRegularExpression>
+#include <QJSEngine>
+#include <QJSValue>
+#include <QFile>
+#include <QCoreApplication>
+#include <QEventLoop>
+#include <QNetworkReply>
+#include <QQmlEngine>
 
 MangaDexSource::MangaDexSource(QObject *parent)
     : QObject(parent)
     , m_nam(new QNetworkAccessManager(this))
-    , m_baseUrl("https://api.mangadex.org")
-    , m_sourceName("MangaDex")
 {
-    connect(m_nam, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply *reply, const QList<QSslError> &errors) {
-        qDebug() << "Ignoring C++ SSL errors:" << errors;
-        reply->ignoreSslErrors();
-    });
+    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
 }
-
-void MangaDexSource::setBaseUrl(const QString &url)
-{
-    if (m_baseUrl != url) {
-        m_baseUrl = url;
-        qDebug() << "MangaDexSource base URL set to:" << m_baseUrl;
-    }
-}
-
-void MangaDexSource::setSourceName(const QString &name)
-{
-    if (m_sourceName != name) {
-        m_sourceName = name;
-        qDebug() << "MangaDexSource name set to:" << m_sourceName;
-    }
-}
-
-#include <QSslConfiguration>
-#include <QSslSocket>
 
 QNetworkRequest MangaDexSource::createRequest(const QUrl &url)
 {
     QNetworkRequest req(url);
-    req.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-    
-    QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
-    sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
-    req.setSslConfiguration(sslConf);
-    
+    req.setRawHeader("User-Agent", "HanaYomi/1.0.0 (contact@hanayomi.app)");
+    req.setRawHeader("Accept",
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+    req.setRawHeader("Accept-Language", "en-US,en;q=0.9,id;q=0.8");
+    req.setRawHeader("Cache-Control",   "no-cache");
+    req.setRawHeader("Pragma",          "no-cache");
+    if (!m_baseUrl.isEmpty() && !m_baseUrl.contains("mangadex.org")) {
+        req.setRawHeader("Referer", m_baseUrl.toUtf8());
+        req.setRawHeader("Origin",  m_baseUrl.toUtf8());
+    }
     return req;
 }
 
-QNetworkReply* MangaDexSource::sendGetRequest(const QNetworkRequest &req)
+// ---- setBaseUrl / setSourceName ----
+void MangaDexSource::setBaseUrl(const QString &baseUrl)
 {
-    QNetworkReply *reply = m_nam->get(req);
-    if (reply) {
-        connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &errors) {
-            qDebug() << "Reply ignoring MangaDex C++ SSL errors:" << errors;
-            reply->ignoreSslErrors();
-        });
+    m_baseUrl = baseUrl;
+    qDebug() << "MangaDexSource base URL set to:" << m_baseUrl;
+}
+
+void MangaDexSource::setSourceName(const QString &name)
+{
+    m_sourceName = name;
+    qDebug() << "MangaDexSource name set to:" << m_sourceName;
+}
+
+void MangaDexSource::setSourcePackage(const QString &pkg)
+{
+    m_sourcePkg = pkg;
+    qDebug() << "MangaDexSource package set to:" << m_sourcePkg;
+}
+
+bool MangaDexSource::hasJsScraper()
+{
+    if (m_sourcePkg.isEmpty()) return false;
+    QString path = QCoreApplication::applicationDirPath() + "/qml/scrapers/" + m_sourcePkg + ".js";
+    return QFile::exists(path);
+}
+
+QVariant MangaDexSource::runScraper(const QString &method, const QVariantList &args)
+{
+    if (m_sourcePkg.isEmpty()) return QVariant();
+
+    QString path = QCoreApplication::applicationDirPath() + "/qml/scrapers/" + m_sourcePkg + ".js";
+    QFile file(path);
+    if (!file.exists()) {
+        qDebug() << "Scraper file does not exist at:" << path;
+        return QVariant();
     }
-    return reply;
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Failed to open scraper file at:" << path;
+        return QVariant();
+    }
+
+    QString jsCode = file.readAll();
+    file.close();
+
+    QJSEngine engine;
+    QJSValue httpObj = engine.newQObject(this);
+    engine.globalObject().setProperty("http", httpObj);
+
+    QJSValue scraperObj = engine.evaluate("(" + jsCode + ")");
+    if (scraperObj.isError()) {
+        qDebug() << "Error evaluating JS scraper:" << scraperObj.toString();
+        emit networkError("Scraper eval error: " + scraperObj.toString());
+        return QVariant();
+    }
+
+    QJSValue func = scraperObj.property(method);
+    if (!func.isCallable()) {
+        qDebug() << "Method" << method << "is not callable in scraper" << m_sourcePkg;
+        return QVariant();
+    }
+
+    QJSValueList jsArgs;
+    for (const QVariant &arg : args) {
+        jsArgs << engine.toScriptValue(arg);
+    }
+
+    QJSValue result = func.callWithInstance(scraperObj, jsArgs);
+    if (result.isError()) {
+        qDebug() << "Error executing scraper method" << method << ":" << result.toString();
+        emit networkError("Scraper exec error: " + result.toString());
+        return QVariant();
+    }
+
+    return result.toVariant();
+}
+
+#include <QSslError>
+
+QString MangaDexSource::httpGet(const QString &urlStr)
+{
+    QUrl url(urlStr);
+    QNetworkRequest req = createRequest(url);
+    QNetworkReply *reply = m_nam->get(req);
+
+    connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &errors) {
+        qDebug() << "Scraper ignoring SSL errors for GET:" << errors;
+        reply->ignoreSslErrors();
+    });
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    reply->deleteLater();
+    if (reply->error() == QNetworkReply::NoError) {
+        return QString::fromUtf8(reply->readAll());
+    } else {
+        qDebug() << "Scraper HTTP GET failed for" << urlStr << ":" << reply->errorString();
+        return "";
+    }
+}
+
+QString MangaDexSource::httpPost(const QString &urlStr, const QString &payload, const QString &contentType)
+{
+    QUrl url(urlStr);
+    QNetworkRequest req = createRequest(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, contentType);
+    QNetworkReply *reply = m_nam->post(req, payload.toUtf8());
+
+    connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &errors) {
+        qDebug() << "Scraper ignoring SSL errors for POST:" << errors;
+        reply->ignoreSslErrors();
+    });
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    reply->deleteLater();
+    if (reply->error() == QNetworkReply::NoError) {
+        return QString::fromUtf8(reply->readAll());
+    } else {
+        qDebug() << "Scraper HTTP POST failed for" << urlStr << ":" << reply->errorString();
+        return "";
+    }
 }
 
 // ---- Helper: parse cover art URL dari relationships[] ----
@@ -137,156 +238,251 @@ QVariantMap MangaDexSource::parseMangaObject(const QJsonObject &obj)
 }
 
 // ---- getPopularManga ----
-// Port dari: MangaDex.popularMangaRequest() → GET /manga?order[rating]=desc
 void MangaDexSource::getPopularManga(int page)
 {
-    if (m_baseUrl != "https://api.mangadex.org") {
-        QUrl url(m_baseUrl + "/manga/?m_orderby=views");
-        if (page > 1) {
-            url = QUrl(m_baseUrl + QString("/manga/page/%1/?m_orderby=views").arg(page));
+    if (hasJsScraper()) {
+        QVariantList results = runScraper("getPopularManga", {page}).toList();
+        emit mangaListReady(results);
+        return;
+    }
+
+    if (m_baseUrl.contains("mangadex.org")) {
+        // ---- MangaDex JSON API ----
+        QUrl url(m_baseUrl + "/manga");
+        QUrlQuery q;
+        q.addQueryItem("limit",               "20");
+        q.addQueryItem("offset",              QString::number((page - 1) * 20));
+        q.addQueryItem("order[followedCount]", "desc");
+        q.addQueryItem("includes[]",          "cover_art");
+        q.addQueryItem("includes[]",          "author");
+        q.addQueryItem("contentRating[]",     "safe");
+        q.addQueryItem("contentRating[]",     "suggestive");
+        if (m_nsfwEnabled) {
+            q.addQueryItem("contentRating[]", "erotica");
+            q.addQueryItem("contentRating[]", "pornographic");
         }
+        url.setQuery(q);
         QNetworkRequest req = createRequest(url);
-        QNetworkReply *reply = sendGetRequest(req);
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QNetworkReply *reply = m_nam->get(req);
         connect(reply, &QNetworkReply::finished, this, [this, reply]() {
             reply->deleteLater();
-            if (reply->error() != QNetworkReply::NoError) {
-                emit networkError(reply->errorString());
-                return;
-            }
-            QString html = QString::fromUtf8(reply->readAll());
-            QVariantList results = parseMadaraCatalog(html);
+            if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonArray data   = doc.object()["data"].toArray();
+            QVariantList results;
+            for (const QJsonValue &v : data) results.append(parseMangaObject(v.toObject()));
             emit mangaListReady(results);
         });
         return;
     }
 
-    QUrl url(m_baseUrl + "/manga");
-    QUrlQuery q;
-    q.addQueryItem("limit",          "20");
-    q.addQueryItem("offset",         QString::number((page - 1) * 20));
-    q.addQueryItem("order[followedCount]",  "desc");
-    q.addQueryItem("includes[]",     "cover_art");
-    q.addQueryItem("includes[]",     "author");
-    q.addQueryItem("contentRating[]","safe");
-    q.addQueryItem("contentRating[]","suggestive");
-    url.setQuery(q);
+    // ---- Madara/WP mode: try multiple URL path patterns ----
+    // Different sites use different WordPress manga plugin configurations.
+    // We try each path in sequence until one returns valid HTML with manga entries.
+    static const QStringList MANGA_PATHS = {
+        "/manga/", "/manhwa/", "/manhua/",
+        "/komik/", "/comics/", "/series/",
+        "/catalogue/", "/webtoon/", "/"
+    };
 
-    QNetworkRequest req = createRequest(url);
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QString capturedBase = m_baseUrl;
+    int capturedPage     = page;
 
-    QNetworkReply *reply = sendGetRequest(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        reply->deleteLater();
-        if (reply->error() != QNetworkReply::NoError) {
-            emit networkError(reply->errorString());
+    // Use a shared counter/state via QSharedPointer so the lambda chain can coordinate
+    QSharedPointer<int> pathIndex(new int(0));
+    QSharedPointer<bool> done(new bool(false));
+
+    std::function<void()> tryNextPath = [this, capturedBase, capturedPage, pathIndex, done, &tryNextPath]() {};
+
+    // We need tryNextPath to be copyable for the lambda — use QSharedPointer<std::function>
+    auto fnHolder = QSharedPointer<std::function<void()>>::create();
+    *fnHolder = [this, capturedBase, capturedPage, pathIndex, done, fnHolder]() {
+        if (*done || *pathIndex >= MANGA_PATHS.size()) {
+            if (!*done) {
+                // All paths exhausted
+                emit networkError("No manga listing found at " + capturedBase +
+                                  " — site may require login or use unsupported format");
+            }
             return;
         }
-        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        QJsonArray data   = doc.object()["data"].toArray();
-        QVariantList results;
-        for (const QJsonValue &v : data) {
-            results.append(parseMangaObject(v.toObject()));
-        }
-        emit mangaListReady(results);
-    });
+
+        QString path = MANGA_PATHS[*pathIndex];
+        (*pathIndex)++;
+
+        QUrlQuery q;
+        q.addQueryItem("m_orderby", "views");
+        // Madara paginates with ?page=N
+        if (capturedPage > 1) q.addQueryItem("page", QString::number(capturedPage));
+        QUrl url(capturedBase + path);
+        url.setQuery(q);
+
+        QNetworkRequest req = createRequest(url);
+        QNetworkReply *reply = m_nam->get(req);
+
+        connect(reply, &QNetworkReply::finished, this,
+                [this, reply, capturedBase, done, fnHolder]() {
+            reply->deleteLater();
+
+            int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            bool httpOk = (reply->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 400);
+
+            if (!httpOk) {
+                // This path failed — try next
+                (*fnHolder)();
+                return;
+            }
+
+            QString html = QString::fromUtf8(reply->readAll());
+            QVariantList results = parseMadaraHtml(html, capturedBase);
+            if (results.isEmpty()) results = parseMangaThemeHtml(html, capturedBase);
+
+            if (!results.isEmpty()) {
+                *done = true;
+                emit mangaListReady(results);
+            } else {
+                // Page returned 200 but no manga found — try next path
+                (*fnHolder)();
+            }
+        });
+    };
+
+    (*fnHolder)();
 }
 
 // ---- searchManga ----
-// Port dari: MangaDex.searchMangaRequest() → GET /manga?title=...
 void MangaDexSource::searchManga(const QString &query, int page)
 {
-    if (m_baseUrl != "https://api.mangadex.org") {
-        QUrl url(m_baseUrl);
+    if (hasJsScraper()) {
+        QVariantList results = runScraper("searchManga", {query, page}).toList();
+        emit mangaListReady(results);
+        return;
+    }
+
+    if (m_baseUrl.contains("mangadex.org")) {
+        // ---- MangaDex API ----
+        QUrl url(m_baseUrl + "/manga");
         QUrlQuery q;
-        q.addQueryItem("s", query);
-        q.addQueryItem("post_type", "wp-manga");
+        q.addQueryItem("title",          query);
+        q.addQueryItem("limit",          "20");
+        q.addQueryItem("offset",         QString::number((page - 1) * 20));
+        q.addQueryItem("includes[]",     "cover_art");
+        q.addQueryItem("includes[]",     "author");
+        q.addQueryItem("contentRating[]","safe");
+        q.addQueryItem("contentRating[]","suggestive");
+        if (m_nsfwEnabled) {
+            q.addQueryItem("contentRating[]", "erotica");
+            q.addQueryItem("contentRating[]", "pornographic");
+        }
         url.setQuery(q);
-        
         QNetworkRequest req = createRequest(url);
-        QNetworkReply *reply = sendGetRequest(req);
+        QNetworkReply *reply = m_nam->get(req);
         connect(reply, &QNetworkReply::finished, this, [this, reply]() {
             reply->deleteLater();
-            if (reply->error() != QNetworkReply::NoError) {
-                emit networkError(reply->errorString());
-                return;
-            }
-            QString html = QString::fromUtf8(reply->readAll());
-            QVariantList results = parseMadaraCatalog(html);
+            if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonArray data   = doc.object()["data"].toArray();
+            QVariantList results;
+            for (const QJsonValue &v : data) results.append(parseMangaObject(v.toObject()));
             emit mangaListReady(results);
         });
         return;
     }
 
-    QUrl url(m_baseUrl + "/manga");
-    QUrlQuery q;
-    q.addQueryItem("title",          query);
-    q.addQueryItem("limit",          "20");
-    q.addQueryItem("offset",         QString::number((page - 1) * 20));
-    q.addQueryItem("includes[]",     "cover_art");
-    q.addQueryItem("includes[]",     "author");
-    q.addQueryItem("contentRating[]","safe");
-    q.addQueryItem("contentRating[]","suggestive");
-    url.setQuery(q);
+    // ---- Madara/WP search: try standard WP search then fall back to /?s= ----
+    static const QStringList SEARCH_PATHS = {
+        "/?s=%1&post_type=wp-manga",
+        "/?s=%1&post_type=manga",
+        "/search/?q=%1",
+        "/?s=%1"
+    };
 
-    QNetworkRequest req = createRequest(url);
-    QNetworkReply *reply = sendGetRequest(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        reply->deleteLater();
-        if (reply->error() != QNetworkReply::NoError) {
-            emit networkError(reply->errorString());
+    QString capturedBase  = m_baseUrl;
+    QString capturedQuery = query;
+    QSharedPointer<int>  pathIndex(new int(0));
+    QSharedPointer<bool> done(new bool(false));
+
+    auto fnHolder = QSharedPointer<std::function<void()>>::create();
+    *fnHolder = [this, capturedBase, capturedQuery, pathIndex, done, fnHolder]() {
+        if (*done || *pathIndex >= SEARCH_PATHS.size()) {
+            if (!*done) emit networkError("Search not supported on " + capturedBase);
             return;
         }
-        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        QJsonArray data   = doc.object()["data"].toArray();
-        QVariantList results;
-        for (const QJsonValue &v : data) {
-            results.append(parseMangaObject(v.toObject()));
-        }
-        emit mangaListReady(results);
-    });
+
+        QString pathTpl = SEARCH_PATHS[(*pathIndex)++];
+        QUrl url(capturedBase + pathTpl.arg(QString::fromUtf8(QUrl::toPercentEncoding(capturedQuery))));
+        QNetworkRequest req = createRequest(url);
+        QNetworkReply *reply = m_nam->get(req);
+
+        connect(reply, &QNetworkReply::finished, this,
+                [this, reply, capturedBase, done, fnHolder]() {
+            reply->deleteLater();
+            int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            bool httpOk = (reply->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 400);
+            if (!httpOk) { (*fnHolder)(); return; }
+            QString html = QString::fromUtf8(reply->readAll());
+            QVariantList results = parseMadaraHtml(html, capturedBase);
+            if (results.isEmpty()) results = parseMangaThemeHtml(html, capturedBase);
+            if (!results.isEmpty()) { *done = true; emit mangaListReady(results); }
+            else { (*fnHolder)(); }
+        });
+    };
+
+    (*fnHolder)();
 }
 
 // ---- getMangaDetails ----
-// Port dari: MangaDex.mangaDetailsParse() → GET /manga/{id}
 void MangaDexSource::getMangaDetails(const QString &mangaId)
 {
-    if (m_baseUrl != "https://api.mangadex.org") {
-        QUrl url;
-        if (mangaId.startsWith("http")) {
-            url = QUrl(mangaId);
-        } else {
-            url = QUrl(m_baseUrl + "/manga/" + mangaId + "/");
-        }
-        QNetworkRequest req = createRequest(url);
-        QNetworkReply *reply = sendGetRequest(req);
-        connect(reply, &QNetworkReply::finished, this, [this, reply, mangaId]() {
-            reply->deleteLater();
-            if (reply->error() != QNetworkReply::NoError) {
-                emit networkError(reply->errorString());
-                return;
-            }
-            QString html = QString::fromUtf8(reply->readAll());
-            QVariantMap details = parseMadaraDetails(html, mangaId);
-            emit mangaDetailReady(details);
-        });
+    if (hasJsScraper()) {
+        QVariantMap details = runScraper("getMangaDetails", {mangaId}).toMap();
+        emit mangaDetailReady(details);
         return;
     }
 
+    if (!m_baseUrl.contains("mangadex.org")) {
+        // Non-MangaDex: mangaId is a full URL slug like "/manga/slug-name"
+        QUrl url(m_baseUrl + mangaId);
+        QNetworkRequest req = createRequest(url);
+        QString capturedBase = m_baseUrl;
+        QNetworkReply *reply = m_nam->get(req);
+        connect(reply, &QNetworkReply::finished, this, [this, reply, mangaId, capturedBase]() {
+            reply->deleteLater();
+            if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
+            QString html = QString::fromUtf8(reply->readAll());
+            // Parse title from <h1> or og:title
+            QVariantMap m;
+            QRegularExpression ogTitle("<meta property=\"og:title\" content=\"([^\"]+)\"");
+            QRegularExpression h1("<h1[^>]*>([^<]+)</h1>");
+            auto ogMatch = ogTitle.match(html);
+            auto h1Match = h1.match(html);
+            m["id"]          = mangaId;
+            m["title"]       = ogMatch.hasMatch() ? ogMatch.captured(1).trimmed() : (h1Match.hasMatch() ? h1Match.captured(1).trimmed() : "");
+            m["description"] = "";
+            m["author"]      = "";
+            m["status"]      = 0;
+            m["genre"]       = "";
+            // og:image for cover
+            QRegularExpression ogImg("<meta property=\"og:image\" content=\"([^\"]+)\"");
+            auto imgMatch = ogImg.match(html);
+            m["thumbnailUrl"] = imgMatch.hasMatch() ? imgMatch.captured(1) : "";
+            m["sourceId"]    = m_sourceName;
+            emit mangaDetailReady(m);
+        });
+        return;
+    }
+    // ---- MangaDex ----
     QUrl url(m_baseUrl + "/manga/" + mangaId);
     QUrlQuery q;
     q.addQueryItem("includes[]", "cover_art");
     q.addQueryItem("includes[]", "author");
     q.addQueryItem("includes[]", "artist");
     url.setQuery(q);
-
     QNetworkRequest req = createRequest(url);
-    QNetworkReply *reply = sendGetRequest(req);
+    QNetworkReply *reply = m_nam->get(req);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         reply->deleteLater();
-        if (reply->error() != QNetworkReply::NoError) {
-            emit networkError(reply->errorString());
-            return;
-        }
+        if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
         QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
         QJsonObject data  = doc.object()["data"].toObject();
         emit mangaDetailReady(parseMangaObject(data));
@@ -294,58 +490,32 @@ void MangaDexSource::getMangaDetails(const QString &mangaId)
 }
 
 // ---- getChapterList ----
-// Port dari: MangaDex.chapterListParse() → GET /manga/{id}/feed
 void MangaDexSource::getChapterList(const QString &mangaId)
 {
-    if (m_baseUrl != "https://api.mangadex.org") {
-        QString cleanMangaId = mangaId;
-        if (mangaId.startsWith("http")) {
-            cleanMangaId = mangaId.split("/", QString::SkipEmptyParts).last();
-        }
-        
-        QUrl url(m_baseUrl + "/manga/" + cleanMangaId + "/ajax/chapters/");
-        QNetworkRequest req = createRequest(url);
-        QNetworkReply *reply = sendGetRequest(req);
-        connect(reply, &QNetworkReply::finished, this, [this, reply, cleanMangaId]() {
-            reply->deleteLater();
-            if (reply->error() == QNetworkReply::NoError) {
-                QString html = QString::fromUtf8(reply->readAll());
-                QVariantList chapters = parseMadaraChapters(html, cleanMangaId);
-                if (!chapters.isEmpty()) {
-                    emit chapterListReady(chapters);
-                    return;
-                }
-            }
-            
-            QUrl mainUrl(m_baseUrl + "/manga/" + cleanMangaId + "/");
-            QNetworkRequest mainReq = createRequest(mainUrl);
-            QNetworkReply *mainReply = sendGetRequest(mainReq);
-            connect(mainReply, &QNetworkReply::finished, this, [this, mainReply, cleanMangaId]() {
-                mainReply->deleteLater();
-                if (mainReply->error() != QNetworkReply::NoError) {
-                    emit networkError(mainReply->errorString());
-                    return;
-                }
-                QString html = QString::fromUtf8(mainReply->readAll());
-                QVariantList chapters = parseMadaraChapters(html, cleanMangaId);
-                emit chapterListReady(chapters);
-            });
-        });
+    if (hasJsScraper()) {
+        QVariantList chapters = runScraper("getChapterList", {mangaId}).toList();
+        emit chapterListReady(chapters);
         return;
     }
 
+    if (!m_baseUrl.contains("mangadex.org")) {
+        // Non-MangaDex: try Madara AJAX chapter list
+        // Emit empty for now — chapter detail pages needed per-source
+        emit chapterListReady(QVariantList());
+        return;
+    }
     QUrl url(m_baseUrl + "/manga/" + mangaId + "/feed");
     QUrlQuery q;
     q.addQueryItem("limit",           "96");
     q.addQueryItem("offset",          "0");
     q.addQueryItem("translatedLanguage[]", "en");
-    q.addQueryItem("translatedLanguage[]", "id");  // Indonesia
+    q.addQueryItem("translatedLanguage[]", "id");
     q.addQueryItem("order[chapter]",  "desc");
     q.addQueryItem("includes[]",      "scanlation_group");
     url.setQuery(q);
 
     QNetworkRequest req = createRequest(url);
-    QNetworkReply *reply = sendGetRequest(req);
+    QNetworkReply *reply = m_nam->get(req);
     connect(reply, &QNetworkReply::finished, this, [this, reply, mangaId]() {
         reply->deleteLater();
         if (reply->error() != QNetworkReply::NoError) {
@@ -395,29 +565,62 @@ void MangaDexSource::getChapterList(const QString &mangaId)
 }
 
 // ---- getPageList ----
-// Port dari: MangaDex.pageListParse() → GET /at-home/server/{chapterId}
+// MangaDex: GET /at-home/server/{chapterId}
+// Non-MangaDex: chapterId is a full URL, fetch HTML and extract image URLs
 void MangaDexSource::getPageList(const QString &chapterId)
 {
-    if (m_baseUrl != "https://api.mangadex.org") {
-        QUrl url(chapterId);
+    if (hasJsScraper()) {
+        QVariantList pages = runScraper("getPageList", {chapterId}).toList();
+        emit pageListReady(pages);
+        return;
+    }
+
+    if (!m_baseUrl.contains("mangadex.org")) {
+        // Generic: fetch chapter page and extract image URLs from JSON/TS reader scripts
+        QUrl url(chapterId.startsWith("http") ? chapterId : m_baseUrl + chapterId);
         QNetworkRequest req = createRequest(url);
-        QNetworkReply *reply = sendGetRequest(req);
+        QNetworkReply *reply = m_nam->get(req);
         connect(reply, &QNetworkReply::finished, this, [this, reply]() {
             reply->deleteLater();
-            if (reply->error() != QNetworkReply::NoError) {
-                emit networkError(reply->errorString());
-                return;
-            }
+            if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
             QString html = QString::fromUtf8(reply->readAll());
-            QVariantList pages = parseMadaraPages(html);
+            QVariantList pages;
+            // Try ts_reader.run([{"images":[...]}]) pattern (Madara theme)
+            QRegularExpression tsReader("ts_reader\\.run\\(\\{.*?\"images\":\\[([^\\]]+)\\]");
+            tsReader.setPatternOptions(QRegularExpression::DotMatchesEverythingOption);
+            auto m = tsReader.match(html);
+            if (m.hasMatch()) {
+                QString imagesStr = "[" + m.captured(1) + "]";
+                QJsonDocument doc = QJsonDocument::fromJson(imagesStr.toUtf8());
+                QJsonArray arr = doc.array();
+                int idx = 0;
+                for (const QJsonValue &v : arr) {
+                    QVariantMap page;
+                    page["index"]    = idx++;
+                    page["imageUrl"] = v.toString();
+                    pages.append(page);
+                }
+            } else {
+                // Fallback: extract img src from .reading-content or #readerarea
+                QRegularExpression imgRx("<img[^>]+(?:src|data-src)=\"(https?://[^\"]+(?:jpg|jpeg|png|webp|gif))\"");
+                imgRx.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+                auto it = imgRx.globalMatch(html);
+                int idx = 0;
+                while (it.hasNext()) {
+                    auto match = it.next();
+                    QVariantMap page;
+                    page["index"]    = idx++;
+                    page["imageUrl"] = match.captured(1);
+                    pages.append(page);
+                }
+            }
             emit pageListReady(pages);
         });
         return;
     }
-
     QUrl url(m_baseUrl + "/at-home/server/" + chapterId);
     QNetworkRequest req = createRequest(url);
-    QNetworkReply *reply = sendGetRequest(req);
+    QNetworkReply *reply = m_nam->get(req);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         reply->deleteLater();
         if (reply->error() != QNetworkReply::NoError) {
@@ -444,220 +647,112 @@ void MangaDexSource::getPageList(const QString &chapterId)
     });
 }
 
-// ---- Madara HTML Scraper Helpers ----
-
-QVariantList MangaDexSource::parseMadaraCatalog(const QString &html)
+// ---- parseMadaraHtml ----
+// Parses WordPress Madara theme manga listing HTML
+// Matches elements like: <div class="post-title"><h3><a href="...">Title</a></h3></div>
+QVariantList MangaDexSource::parseMadaraHtml(const QString &html, const QString &baseUrl)
 {
     QVariantList results;
-    QSet<QString> seenUrls;
 
-    // Pola utama: href ke /manga/slug/ diikuti img dengan src dan alt=judul
-    // Cocok untuk Madara/MangaThemesia modern (Kiryuu, BacaKomik, dsb)
-    QRegularExpression cardRegex(
-        "href=\"([^\"]+/manga/[a-zA-Z0-9\\-]+/)\"[^>]*>[\\s\\S]{0,800}?<img[^>]+src=\"([^\"]+)\"[^>]+alt=\"([^\"]+)\"",
-        QRegularExpression::CaseInsensitiveOption
+    // Match manga cards: <div class="page-item-detail manga"> ... </div>
+    // Look for links and images within the card
+    QRegularExpression cardRx(
+        "<div[^>]+class=\"[^\"]*post-title[^\"]*\"[^>]*>\\s*<[^>]+>\\s*<a\\s+href=\"([^\"]+)\"[^>]*>([^<]+)</a>",
+        QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption
     );
-    QRegularExpressionMatchIterator it = cardRegex.globalMatch(html);
+    QRegularExpression imgRx(
+        "<img[^>]+(?:src|data-src)=\"(https?://[^\"]+(?:jpg|jpeg|png|webp|gif)[^\"]*)\""
+        , QRegularExpression::CaseInsensitiveOption
+    );
 
-    while (it.hasNext() && results.size() < 24) {
-        QRegularExpressionMatch match = it.next();
-        QString mangaUrl = match.captured(1);
-        QString imgUrl   = match.captured(2);
-        QString title    = match.captured(3).trimmed();
-
-        if (mangaUrl.contains("/feed/") || mangaUrl.contains("/page/")) continue;
-        if (imgUrl.contains("logo") || imgUrl.contains("icon") || imgUrl.contains("banner")) continue;
-        bool validImg = imgUrl.contains(".jpg") || imgUrl.contains(".jpeg") ||
-                        imgUrl.contains(".png") || imgUrl.contains(".webp") ||
-                        imgUrl.contains("uploads") || imgUrl.contains("cover");
-        if (!validImg) continue;
-        if (title.length() < 2) continue;
-
-        if (!mangaUrl.startsWith("http"))
-            mangaUrl = mangaUrl.startsWith("/") ? m_baseUrl + mangaUrl : m_baseUrl + "/" + mangaUrl;
-
-        if (imgUrl.contains(" ")) imgUrl = imgUrl.split(" ")[0].trimmed();
-        if (!imgUrl.startsWith("http"))
-            imgUrl = imgUrl.startsWith("/") ? m_baseUrl + imgUrl : m_baseUrl + "/" + imgUrl;
-
-        if (seenUrls.contains(mangaUrl)) continue;
-        seenUrls.insert(mangaUrl);
-
-        QString mangaId = mangaUrl.split("/", QString::SkipEmptyParts).last();
-        QVariantMap m;
-        m["id"]           = mangaId;
-        m["url"]          = mangaUrl;
-        m["title"]        = title;
-        m["description"]  = QString("Manga from %1").arg(m_sourceName);
-        m["author"]       = "Unknown";
-        m["status"]       = 0;
-        m["genre"]        = "Manga";
-        m["thumbnailUrl"] = imgUrl;
-        m["sourceId"]     = m_sourceName.toLower();
-        results.append(m);
+    auto cardIt = cardRx.globalMatch(html);
+    // Simple approach: collect all title+link pairs
+    QStringList urls, titles;
+    while (cardIt.hasNext()) {
+        auto m = cardIt.next();
+        urls  << m.captured(1).trimmed();
+        titles << m.captured(2).trimmed();
     }
 
-    // Fallback: pola lama jika site menggunakan struktur berbeda
-    if (results.isEmpty()) {
-        QSet<QString> seenFallback;
-        QRegularExpression itemRegex("<a[^>]+href=\"([^\"]+/manga/[^/]+/?)\"[^>]*>([\\s\\S]*?)</a>");
-        QRegularExpressionMatchIterator i2 = itemRegex.globalMatch(html);
-        while (i2.hasNext() && results.size() < 24) {
-            QRegularExpressionMatch match = i2.next();
-            QString mangaUrl = match.captured(1);
-            if (!mangaUrl.startsWith("http"))
-                mangaUrl = mangaUrl.startsWith("/") ? m_baseUrl + mangaUrl : m_baseUrl + "/" + mangaUrl;
-            if (seenFallback.contains(mangaUrl)) continue;
-            seenFallback.insert(mangaUrl);
-
-            QString titleText = match.captured(2);
-            titleText.remove(QRegularExpression("<[^>]*>"));
-            QString title = titleText.trimmed();
-            if (title.length() < 2) continue;
-
-            int pos = match.capturedStart(0);
-            QString ctx = html.mid(qMax(0, pos - 500), 1200);
-            QRegularExpression imgR("<img[^>]+src=\"([^\"]+)\"");
-            QRegularExpressionMatch imgM = imgR.match(ctx);
-            if (!imgM.hasMatch()) continue;
-            QString imgUrl = imgM.captured(1).split(" ")[0].trimmed();
-            if (!imgUrl.startsWith("http"))
-                imgUrl = imgUrl.startsWith("/") ? m_baseUrl + imgUrl : m_baseUrl + "/" + imgUrl;
-
-            QString mangaId = mangaUrl.split("/", QString::SkipEmptyParts).last();
-            QVariantMap m;
-            m["id"] = mangaId; m["url"] = mangaUrl; m["title"] = title;
-            m["description"] = QString("Manga from %1").arg(m_sourceName);
-            m["author"] = "Unknown"; m["status"] = 0; m["genre"] = "Manga";
-            m["thumbnailUrl"] = imgUrl; m["sourceId"] = m_sourceName.toLower();
-            results.append(m);
+    // Collect cover images
+    QStringList covers;
+    auto imgIt = imgRx.globalMatch(html);
+    while (imgIt.hasNext()) {
+        auto m = imgIt.next();
+        QString src = m.captured(1);
+        if (src.contains("cover") || src.contains("manga") || src.contains("thumb")) {
+            covers << src;
         }
     }
 
+    for (int i = 0; i < titles.size(); i++) {
+        if (titles[i].isEmpty()) continue;
+        QVariantMap manga;
+        QString url = urls.value(i);
+        // Derive slug from URL: strip baseUrl prefix
+        QString slug = url;
+        slug.remove(0, baseUrl.length());
+        if (slug.isEmpty()) slug = url;
+        manga["id"]           = slug;
+        manga["url"]          = slug;
+        manga["title"]        = titles[i];
+        manga["thumbnailUrl"] = covers.value(i, "");
+        manga["author"]       = "";
+        manga["description"]  = "";
+        manga["status"]       = 0;
+        manga["genre"]        = "";
+        manga["sourceId"]     = m_sourceName;
+        results.append(manga);
+    }
     return results;
 }
 
-
-QVariantMap MangaDexSource::parseMadaraDetails(const QString &html, const QString &mangaId)
+// ---- parseMangaThemeHtml ----
+// Generic fallback parser for other WP manga themes (e.g. Komiku, Kiryuu, Mangakyo)
+// Looks for og:image + title patterns or article/post card patterns
+QVariantList MangaDexSource::parseMangaThemeHtml(const QString &html, const QString &baseUrl)
 {
-    QVariantMap m;
-    
-    QString title = m_sourceName + " Manga";
-    QRegularExpression titleRegex("<div class=\"post-title\">\\s*<h5>\\s*<a[^>]*>([\\s\\S]*?)</a>\\s*</h5>\\s*</div>|<h1[^>]*>([^<]+)</h1>");
-    QRegularExpressionMatch titleMatch = titleRegex.match(html);
-    if (titleMatch.hasMatch()) {
-        title = titleMatch.captured(1).trimmed();
-        if (title.isEmpty()) title = titleMatch.captured(2).trimmed();
-    }
-    title.remove(QRegularExpression("<[^>]*>"));
-    title = title.trimmed();
-    
-    QString description = "No description available.";
-    QRegularExpression descRegex("<div[^>]+(?:class|id)=\"[^\"]*(?:summary__content|description-summary|manga-excerpt|post-content_item)[^\"]*\"[^>]*>([\\s\\S]*?)</div>");
-    QRegularExpressionMatch descMatch = descRegex.match(html);
-    if (descMatch.hasMatch()) {
-        description = descMatch.captured(1).trimmed();
-        description.remove(QRegularExpression("<[^>]*>"));
-    }
-    description = description.trimmed();
-    
-    QString author = "Unknown";
-    QRegularExpression authorRegex("<a[^>]+href=\"[^\"]*/manga-author/[^\"]*\"[^>]*>([^<]+)</a>|<div[^>]+class=\"author-content\"[^>]*>\\s*<a[^>]*>([^<]+)</a>");
-    QRegularExpressionMatch authorMatch = authorRegex.match(html);
-    if (authorMatch.hasMatch()) {
-        author = authorMatch.captured(1).trimmed();
-        if (author.isEmpty()) author = authorMatch.captured(2).trimmed();
-    }
-    
-    QStringList genres;
-    QRegularExpression genreRegex("<a[^>]+href=\"[^\"]*/manga-genre/[^\"]*\"[^>]*>([^<]+)</a>");
-    QRegularExpressionMatchIterator genreIt = genreRegex.globalMatch(html);
-    while (genreIt.hasNext()) {
-        genres << genreIt.next().captured(1).trimmed();
-    }
-    
-    int status = 0;
-    if (html.contains("Ongoing", Qt::CaseInsensitive)) status = 1;
-    else if (html.contains("Completed", Qt::CaseInsensitive)) status = 2;
-    
-    m["id"]           = mangaId;
-    m["url"]          = m_baseUrl + "/manga/" + mangaId + "/";
-    m["title"]        = title;
-    m["description"]  = description;
-    m["author"]       = author;
-    m["status"]       = status;
-    m["genre"]        = genres.isEmpty() ? "Manga" : genres.join(", ");
-    m["thumbnailUrl"] = "";
-    
-    QRegularExpression coverRegex("<div class=\"summary_image\">\\s*<a[^>]*>\\s*<img[^>]+(?:src|data-src|data-lazy-src)=\"([^\"]+)\"");
-    QRegularExpressionMatch coverMatch = coverRegex.match(html);
-    if (coverMatch.hasMatch()) {
-        m["thumbnailUrl"] = coverMatch.captured(1);
-    }
-    
-    m["sourceId"] = m_sourceName.toLower();
-    
-    return m;
-}
+    QVariantList results;
 
-QVariantList MangaDexSource::parseMadaraChapters(const QString &html, const QString &mangaId)
-{
-    QVariantList chapters;
-    
-    QRegularExpression chapterRegex("<li[^>]*class=\"[^\"]*wp-manga-chapter[^\"]*\"[^>]*>\\s*<a[^>]+href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)</a>");
-    QRegularExpressionMatchIterator i = chapterRegex.globalMatch(html);
-    
-    while (i.hasNext()) {
-        QRegularExpressionMatch match = i.next();
-        QString chapterUrl = match.captured(1);
-        QString chapterTitle = match.captured(2).trimmed();
-        chapterTitle.remove(QRegularExpression("<[^>]*>"));
-        chapterTitle = chapterTitle.trimmed();
-        
-        float chapterNum = -1.0f;
-        QRegularExpression numRegex("chapter\\s*(\\d+(?:\\.\\d+)?)", QRegularExpression::CaseInsensitiveOption);
-        QRegularExpressionMatch numMatch = numRegex.match(chapterUrl);
-        if (numMatch.hasMatch()) {
-            chapterNum = numMatch.captured(1).toFloat();
-        }
-        
-        QVariantMap c;
-        QString chapterId = chapterUrl.split("/", QString::SkipEmptyParts).last();
-        c["id"]            = chapterId;
-        c["mangaId"]       = mangaId;
-        c["url"]           = chapterUrl;
-        c["name"]          = chapterTitle;
-        c["chapterNumber"] = chapterNum;
-        c["scanlator"]     = m_sourceName;
-        c["dateUpload"]    = QDateTime::currentDateTime().toSecsSinceEpoch();
-        
-        chapters.append(c);
-    }
-    return chapters;
-}
+    // Match <article> or <div class="bs"> post cards with links
+    QRegularExpression linkRx(
+        "<a\\s+[^>]*href=\"(" + QRegularExpression::escape(baseUrl) + "/[^\"]+)\"[^>]*>\\s*<img[^>]+(?:src|data-src)=\"([^\"]+)\"[^>]*>",
+        QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption
+    );
+    QRegularExpression titleRx(
+        "<(?:h3|h2|span)[^>]+class=\"[^\"]*title[^\"]*\"[^>]*>\\s*<a[^>]*>([^<]+)</a>",
+        QRegularExpression::CaseInsensitiveOption
+    );
 
-QVariantList MangaDexSource::parseMadaraPages(const QString &html)
-{
-    QVariantList pages;
-    
-    QRegularExpression imgRegex("<div class=\"page-break[^\"]*\"[^>]*>\\s*<img[^>]+(?:src|data-src|data-lazy-src)=\"([^\"]+)\"|<img[^>]+(?:class|id)=\"[^\"]*(?:wp-manga-chapter-img|chapter-img)[^\"]*\"[^>]+(?:src|data-src|data-lazy-src)=\"([^\"]+)\"");
-    QRegularExpressionMatchIterator i = imgRegex.globalMatch(html);
-    
-    int index = 0;
-    while (i.hasNext()) {
-        QRegularExpressionMatch match = i.next();
-        QString imgUrl = match.captured(1);
-        if (imgUrl.isEmpty()) imgUrl = match.captured(2);
-        imgUrl = imgUrl.trimmed();
-        
-        if (!imgUrl.isEmpty()) {
-            QVariantMap page;
-            page["index"]    = index;
-            page["imageUrl"] = imgUrl;
-            pages.append(page);
-            index++;
-        }
+    QStringList urls, covers;
+    auto linkIt = linkRx.globalMatch(html);
+    while (linkIt.hasNext()) {
+        auto m = linkIt.next();
+        urls   << m.captured(1);
+        covers << m.captured(2);
     }
-    return pages;
-}
 
+    QStringList titles;
+    auto titleIt = titleRx.globalMatch(html);
+    while (titleIt.hasNext()) titles << titleIt.next().captured(1).trimmed();
+
+    int count = qMin(urls.size(), titles.size());
+    for (int i = 0; i < count; i++) {
+        if (titles[i].isEmpty()) continue;
+        QVariantMap manga;
+        QString url = urls[i];
+        QString slug = url;
+        slug.remove(0, baseUrl.length());
+        manga["id"]           = slug.isEmpty() ? url : slug;
+        manga["url"]          = slug.isEmpty() ? url : slug;
+        manga["title"]        = titles[i];
+        manga["thumbnailUrl"] = covers.value(i, "");
+        manga["author"]       = "";
+        manga["description"]  = "";
+        manga["status"]       = 0;
+        manga["genre"]        = "";
+        manga["sourceId"]     = m_sourceName;
+        results.append(manga);
+    }
+    return results;
+}

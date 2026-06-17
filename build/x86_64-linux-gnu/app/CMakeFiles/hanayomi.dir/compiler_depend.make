@@ -1088,13 +1088,37 @@ CMakeFiles/hanayomi.dir/src/MangaDexSource.cpp.o: ../../../src/MangaDexSource.cp
   /usr/include/x86_64-linux-gnu/qt5/QtCore/qdebug.h \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QDateTime \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/QJSEngine \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qtqmlglobal.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qtqml-config.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmldebug.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/QJSValue \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/QFile \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qfile.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qfiledevice.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/QCoreApplication \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreapplication.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreevent.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/QEventLoop \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlEngine \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlengine.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqml.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlprivate.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlparserstatus.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlpropertyvaluesource.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmllist.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qmetaobject.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlerror.h \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
+  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h
 
 CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
   /usr/include/stdc-predef.h \
@@ -1561,33 +1585,14 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
   ../../../src/models/Chapter.h \
   ../../../src/models/HistoryEntry.h \
   /usr/include/x86_64-linux-gnu/qt5/QtCore/QDateTime \
-  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
-  /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
+  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h
 
 
 /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlnetworkaccessmanagerfactory.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlNetworkAccessManagerFactory:
 
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h:
-
 /usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlContext:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmllist.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlpropertyvaluesource.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlparserstatus.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlprivate.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqml.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qvector2d.h:
 
@@ -1602,10 +1607,6 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qmatrix.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qtransform.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmldebug.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qpixelformat.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qcolor.h:
 
@@ -1631,6 +1632,24 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qvector4d.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qmatrix4x4.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/QMatrix4x4:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qrect.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/QRectF:
+
+/usr/include/inttypes.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qopengl.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/qtquick-config.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/qtquickglobal.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/qquickview.h:
+
 /usr/include/c++/9/bits/erase_if.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtSql/QSqlDatabase:
@@ -1654,6 +1673,8 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 /usr/include/x86_64-linux-gnu/bits/stdint-intn.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qarraydata.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlprivate.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtGui/qtouchdevice.h:
 
@@ -1723,8 +1744,6 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/c++/9/bits/localefwd.h:
 
-/usr/include/c++/9/cstddef:
-
 /usr/include/stdlib.h:
 
 /usr/include/c++/9/ext/new_allocator.h:
@@ -1779,17 +1798,11 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QStringList:
 
-/usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlEngine:
-
-/usr/include/c++/9/bits/uniform_int_dist.h:
-
 /usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
 
 /usr/include/x86_64-linux-gnu/bits/time64.h:
 
 /usr/include/c++/9/bits/memoryfwd.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_sched_param.h:
 
@@ -1807,6 +1820,10 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/stdlib-float.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qmargins.h:
+
+/usr/include/x86_64-linux-gnu/sys/select.h:
+
 /usr/include/c++/9/debug/assertions.h:
 
 /usr/include/x86_64-linux-gnu/bits/strings_fortified.h:
@@ -1821,6 +1838,8 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 
 /usr/include/c++/9/utility:
 
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlparserstatus.h:
+
 /usr/include/c++/9/bits/cpp_type_traits.h:
 
 /usr/include/c++/9/bits/exception_defines.h:
@@ -1832,12 +1851,6 @@ CMakeFiles/hanayomi.dir/src/main.cpp.o: ../../../src/main.cpp \
 /usr/include/c++/9/bits/algorithmfwd.h:
 
 /usr/include/c++/9/bits/std_abs.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlerror.h:
-
-/usr/include/c++/9/bits/unordered_map.h:
-
-/usr/include/c++/9/bits/functional_hash.h:
 
 /usr/include/c++/9/bits/allocator.h:
 
@@ -1929,6 +1942,10 @@ hanayomi_autogen/UVLADIE3JM/moc_DatabaseHelper.cpp:
 
 /usr/include/c++/9/backward/binders.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/qquickwindow.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qtcore-config.h:
+
 /usr/include/c++/9/type_traits:
 
 /usr/include/c++/9/bits/stream_iterator.h:
@@ -1954,6 +1971,12 @@ hanayomi_autogen/UVLADIE3JM/moc_DatabaseHelper.cpp:
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
 /usr/include/pthread.h:
+
+/usr/include/c++/9/bits/unordered_map.h:
+
+/usr/include/c++/9/bits/functional_hash.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlerror.h:
 
 /usr/include/x86_64-linux-gnu/c++/9/bits/gthr-default.h:
 
@@ -1981,17 +2004,15 @@ hanayomi_autogen/UVLADIE3JM/moc_DatabaseHelper.cpp:
 
 /usr/include/c++/9/bits/list.tcc:
 
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/qtquick-config.h:
-
 /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qsystemdetection.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qtypeinfo.h:
 
-/usr/include/x86_64-linux-gnu/sys/select.h:
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/qsggeometry.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qmargins.h:
+/usr/include/features.h:
 
 /usr/include/c++/9/ext/alloc_traits.h:
 
@@ -2041,10 +2062,6 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qmetaobject.h:
-
-/usr/include/c++/9/bits/stl_algo.h:
-
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qstringlist.h:
 
 /usr/include/errno.h:
@@ -2089,6 +2106,8 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/timesize.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtCore/QCoreApplication:
+
 /usr/include/x86_64-linux-gnu/bits/types/clock_t.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/9/include/stdarg.h:
@@ -2105,6 +2124,8 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h:
+
 /usr/include/endian.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qstring.h:
@@ -2115,6 +2136,10 @@ hanayomi_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h:
 
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qopenglext.h:
+
+/usr/include/x86_64-linux-gnu/bits/endianness.h:
+
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qbasicatomic.h:
@@ -2124,10 +2149,6 @@ hanayomi_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
 
 /usr/include/c++/9/ext/aligned_buffer.h:
-
-/usr/include/x86_64-linux-gnu/bits/endianness.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qopenglext.h:
 
 /usr/include/c++/9/bits/hashtable.h:
 
@@ -2271,6 +2292,10 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
+/usr/include/c++/9/bits/stl_algo.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qmetaobject.h:
+
 /usr/include/x86_64-linux-gnu/bits/uio_lim.h:
 
 ../../../src/MangaDexSource.cpp:
@@ -2299,10 +2324,6 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/c++/9/bits/stl_map.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qtcore-config.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/qquickwindow.h:
-
 /usr/include/c++/9/bits/stl_multimap.h:
 
 /usr/include/c++/9/chrono:
@@ -2321,9 +2342,9 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 ../../../src/MangaDexSource.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreapplication.h:
-
 /usr/include/GL/gl.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreapplication.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtSql/qtsql-config.h:
 
@@ -2344,6 +2365,8 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 /usr/include/x86_64-linux-gnu/qt5/QtSql/qsqlerror.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/QJSValue:
 
 /usr/include/x86_64-linux-gnu/bits/xopen_lim.h:
 
@@ -2405,8 +2428,6 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/qquickview.h:
-
 /usr/include/c++/9/ext/string_conversions.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qcryptographichash.h:
@@ -2435,29 +2456,19 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QJsonObject:
 
-/usr/include/c++/9/bits/istream.tcc:
-
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qjsonarray.h:
-
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QUrlQuery:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/qsharedpointer.h:
 
 /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/QGuiApplication:
+/usr/include/c++/9/cstddef:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qopengl.h:
+/usr/include/x86_64-linux-gnu/qt5/QtCore/QFile:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h:
+/usr/include/x86_64-linux-gnu/qt5/QtQml/QJSEngine:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qinputmethod.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qsize.h:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/QQuickView:
-
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/qtquickglobal.h:
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h:
 
 /usr/include/c++/9/bits/stringfwd.h:
 
@@ -2465,16 +2476,32 @@ hanayomi_autogen/UVLADIE3JM/moc_MangaDexSource.cpp:
 
 /usr/include/x86_64-linux-gnu/qt5/QtQml/qtqml-config.h:
 
-/usr/include/features.h:
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qpixelformat.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtQuick/qsggeometry.h:
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmldebug.h:
 
-/usr/include/inttypes.h:
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/QRectF:
+/usr/include/c++/9/bits/istream.tcc:
 
-/usr/include/x86_64-linux-gnu/qt5/QtCore/qrect.h:
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qjsonarray.h:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/QMatrix4x4:
+/usr/include/x86_64-linux-gnu/qt5/QtCore/QEventLoop:
 
-/usr/include/x86_64-linux-gnu/qt5/QtGui/qmatrix4x4.h:
+/usr/include/c++/9/bits/uniform_int_dist.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlEngine:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqml.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlpropertyvaluesource.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQml/qqmllist.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/QGuiApplication:
+
+/usr/include/x86_64-linux-gnu/qt5/QtGui/qinputmethod.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtCore/qsize.h:
+
+/usr/include/x86_64-linux-gnu/qt5/QtQuick/QQuickView:

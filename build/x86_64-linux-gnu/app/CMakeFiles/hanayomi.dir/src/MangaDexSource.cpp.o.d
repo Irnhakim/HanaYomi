@@ -307,10 +307,34 @@ CMakeFiles/hanayomi.dir/src/MangaDexSource.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdebug.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QDateTime \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
- /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
- /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h \
- /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslConfiguration \
- /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslSocket \
- /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslsocket.h
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/QJSEngine \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qtqmlglobal.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qtqml-config.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmldebug.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/QJSValue \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsvalue.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QFile \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qfile.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qfiledevice.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QCoreApplication \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreapplication.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qcoreevent.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QEventLoop \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/QQmlEngine \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlengine.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qjsengine.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqml.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlprivate.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlparserstatus.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlpropertyvaluesource.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmllist.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qmetaobject.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtQml/qqmlerror.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtNetwork/QSslError \
+ /usr/include/x86_64-linux-gnu/qt5/QtNetwork/qsslerror.h

@@ -10,6 +10,9 @@
 /./qml/pages/HistoryPage.qml
 /./qml/pages/LibraryPage.qml
 /./qml/pages/DataStoragePage.qml
+/./qml/scrapers/eu.kanade.tachiyomi.extension.ar.mangatales.js
+/./qml/scrapers/eu.kanade.tachiyomi.extension.en.mangadex.js
+/./qml/scrapers/eu.kanade.tachiyomi.extension.id.komiku.js
 /./qml/assets/ic_grid.svg
 /./qml/assets/ic_default_source.webp
 /./qml/assets/ic_local_source.webp

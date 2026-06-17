@@ -15,19 +15,18 @@ Page {
     property string selectedLanguageFilter: "All"
     property string layoutMode: "comfortable"
 
-    onVisibleChanged: {
-        if (visible) {
-            loadExtensions();
-        }
-    }
-
     Rectangle { anchors.fill: parent; color: "#111111" }
 
     Settings {
         id: settings
         category: "Extensions"
         property string installedPkgs: "[]"
-        property string extensionRepos: "[]"
+    }
+
+    Settings {
+        id: repoSettings
+        category: "ExtensionRepos"
+        property string repos: "[]"
     }
 
     ListModel { id: extensionModel }
@@ -59,107 +58,75 @@ Page {
         }
     }
 
-    // Daftar built-in sources yang sudah terbukti bisa diakses (Madara/MangaThemesia)
-    property var builtInSources: [
-        { "name": "MangaDex",  "pkg": "eu.kanade.tachiyomi.extension.en.mangadex", "lang": "en", "baseUrl": "https://api.mangadex.org" },
-        { "name": "Kiryuu",    "pkg": "eu.kanade.tachiyomi.extension.id.kiryuu",   "lang": "id", "baseUrl": "https://v6.kiryuu.to" },
-        { "name": "KlikManga", "pkg": "eu.kanade.tachiyomi.extension.id.klikmanga","lang": "id", "baseUrl": "https://klikmanga.org" },
-        { "name": "Doujinku",  "pkg": "eu.kanade.tachiyomi.extension.id.doujinku", "lang": "id", "baseUrl": "https://doujinku.org" },
-        { "name": "Kanzenin",  "pkg": "eu.kanade.tachiyomi.extension.id.kanzenin", "lang": "id", "baseUrl": "https://kanzenin.info" }
-    ]
-
     function refreshActiveSources() {
         activeSourcesModel.clear();
+        // MangaDex built-in source
+        activeSourcesModel.append({
+            "name": "MangaDex",
+            "pkg": "eu.kanade.tachiyomi.extension.en.mangadex",
+            "lang": "en",
+            "baseUrl": "https://api.mangadex.org",
+            "isBuiltIn": true
+        });
 
-        // Tambahkan semua built-in sources secara otomatis
-        for (var b = 0; b < builtInSources.length; b++) {
-            activeSourcesModel.append({
-                "name":      builtInSources[b].name,
-                "pkg":       builtInSources[b].pkg,
-                "lang":      builtInSources[b].lang,
-                "isBuiltIn": true,
-                "baseUrl":   builtInSources[b].baseUrl
-            });
-        }
-
-        // Tambah ekstensi lain yang telah di-install dari store
+        // Tambah ekstensi yang telah di-install
         var pkgs = JSON.parse(settings.installedPkgs);
-        var builtInPkgs = builtInSources.map(function(s){ return s.pkg; });
         for (var i = 0; i < extensionModel.count; i++) {
             var ext = extensionModel.get(i);
-            if (pkgs.indexOf(ext.pkg) !== -1 && builtInPkgs.indexOf(ext.pkg) === -1) {
+            if (pkgs.indexOf(ext.pkg) !== -1 && ext.pkg !== "eu.kanade.tachiyomi.extension.en.mangadex") {
                 activeSourcesModel.append({
-                    "name":      ext.name.replace("Tachiyomi: ", ""),
-                    "pkg":       ext.pkg,
-                    "lang":      ext.lang,
-                    "isBuiltIn": false,
-                    "baseUrl":   ext.baseUrl || ""
+                    "name": ext.name.replace("Tachiyomi: ", ""),
+                    "pkg": ext.pkg,
+                    "lang": ext.lang,
+                    "baseUrl": ext.baseUrl || "",
+                    "isBuiltIn": false
                 });
             }
         }
     }
 
+    // --- Extension repo helpers ---
+    function getConfiguredRepos() {
+        try { return JSON.parse(repoSettings.repos); } catch(e) { return []; }
+    }
 
-    function loadExtensions() {
-        extensionModel.clear();
-        var repos = [];
-        try {
-            repos = JSON.parse(settings.extensionRepos);
-        } catch(e) {}
-        
-        console.log("Extension repos configured:", JSON.stringify(repos));
+    // Track pending fetches for multi-repo loading
+    property int _pendingRepoFetches: 0
 
-        if (repos.length === 0) {
+    function loadExtensions(forceReload) {
+        if (!forceReload && extensionModel.count > 0) {
             refreshActiveSources();
             return;
         }
 
+        var repos = getConfiguredRepos();
+
+        if (repos.length === 0) {
+            // No repos configured — show empty
+            extensionModel.clear();
+            isLoadingExtensions = false;
+            console.log("Extension repos configured: []");
+            return;
+        }
+
+        console.log("Extension repos configured: " + JSON.stringify(repos));
+
         isLoadingExtensions = true;
-        var activeRequests = repos.length;
+        extensionModel.clear();
+        browsePage._pendingRepoFetches = repos.length;
 
-        repos.forEach(function(repo) {
-            var url = repo.url;
-            if (url.endsWith("repo.json")) {
-                url = url.replace("repo.json", "index.min.json");
-            } else if (!url.endsWith("index.min.json")) {
-                if (url.endsWith("/")) {
-                    url += "index.min.json";
-                } else {
-                    url += "/index.min.json";
-                }
-            }
-
-            console.log("Fetching extensions index from URL:", url);
-
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    activeRequests--;
-                    if (activeRequests <= 0) {
-                        isLoadingExtensions = false;
-                    }
-                    if (xhr.status === 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            for (var i = 0; i < data.length; i++) {
-                                var ext = data[i];
-                                // Cek duplikasi paket
-                                var found = false;
-                                for (var j = 0; j < extensionModel.count; j++) {
-                                    if (extensionModel.get(j).pkg === ext.pkg) {
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (!found) {
-                                    var baseUrl = "";
-                                    if (ext.sources && ext.sources.length > 0) {
-                                        var rawUrl = ext.sources[0].baseUrl || "";
-                                        var parts = rawUrl.split(",");
-                                        if (parts.length > 0) {
-                                            baseUrl = parts[0].split("#")[0].trim();
-                                        }
-                                    }
+        for (var r = 0; r < repos.length; r++) {
+            (function(repoUrl) {
+                console.log("Fetching extensions index from URL: " + repoUrl);
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        browsePage._pendingRepoFetches--;
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                for (var i = 0; i < data.length; i++) {
+                                    var ext = data[i];
                                     extensionModel.append({
                                         "name": ext.name || "",
                                         "pkg": ext.pkg || "",
@@ -167,22 +134,27 @@ Page {
                                         "lang": ext.lang || "",
                                         "nsfw": ext.nsfw === 1,
                                         "apk": ext.apk || "",
-                                        "baseUrl": baseUrl
+                                        // ambil baseUrl dari sources[0] jika ada
+                                        "baseUrl": (ext.sources && ext.sources.length > 0) ? ext.sources[0].baseUrl : ""
                                     });
                                 }
+                            } catch (e) {
+                                console.log("Failed to parse extensions from " + repoUrl + ": " + e);
                             }
-                            refreshActiveSources();
-                        } catch (e) {
-                            console.log("Failed to parse extensions JSON from " + url + ":", e);
+                        } else {
+                            console.log("Failed to fetch from " + repoUrl + ": " + xhr.statusText);
                         }
-                    } else {
-                        console.log("Failed to fetch extensions from " + url + " - Status:", xhr.status, "Text:", xhr.statusText);
+                        // When all repos done, finish loading
+                        if (browsePage._pendingRepoFetches <= 0) {
+                            isLoadingExtensions = false;
+                            refreshActiveSources();
+                        }
                     }
                 }
-            }
-            xhr.open("GET", url);
-            xhr.send();
-        });
+                xhr.open("GET", repoUrl);
+                xhr.send();
+            })(repos[r].url);
+        }
     }
 
     // Koneksikan sinyal dari C++ MangaDexSource
@@ -203,8 +175,23 @@ Page {
         }
     }
 
+    Connections {
+        target: appSettings
+        onNsfwEnabledChanged: {
+            mangaDex.setNsfwEnabled(appSettings.nsfwEnabled)
+        }
+    }
+
     Component.onCompleted: {
-        loadExtensions();
+        mangaDex.setNsfwEnabled(appSettings.nsfwEnabled);
+        loadExtensions(false);
+    }
+
+    onVisibleChanged: {
+        if (visible && activeTab === 1) {
+            // Reload if repos might have changed
+            loadExtensions(true);
+        }
     }
 
     header: PageHeader {
@@ -221,14 +208,15 @@ Page {
 
         trailingActionBar.actions: [
             Action {
-                iconName: "navigation-menu"
-                visible: selectedSource === ""
-                onTriggered: mainBrowseDropdown.visible = !mainBrowseDropdown.visible
-            },
-            Action {
                 iconSource: Qt.resolvedUrl("../assets/ic_grid.svg")
                 visible: selectedSource !== ""
                 onTriggered: layoutSelectorDropdown.visible = !layoutSelectorDropdown.visible
+            },
+            Action {
+                iconName: "contextual-menu"
+                text: "More"
+                visible: selectedSource === ""
+                onTriggered: browseHeaderMenu.visible = !browseHeaderMenu.visible
             }
         ]
     }
@@ -275,13 +263,21 @@ Page {
                                 if (index === 0) {
                                     refreshActiveSources();
                                 } else if (index === 1) {
-                                    loadExtensions();
+                                    loadExtensions(false);
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Empty state for Extensions
+        Label {
+            visible: browsePage.activeTab === 1 && extensionModel.count === 0 && !isLoadingExtensions
+            text: "No extensions available. Check repo settings."
+            color: "#888888"
+            anchors.centerIn: parent
         }
 
         Rectangle { visible: selectedSource === ""; width: parent.width; height: visible ? units.dp(1) : 0; color: "#2A2A2A" }
@@ -859,13 +855,19 @@ Page {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                var targetUrl = model.baseUrl || "https://api.mangadex.org";
-                                mangaDex.setBaseUrl(targetUrl);
-                                mangaDex.setSourceName(model.name);
-                                selectedSource = model.name;
-                                browsePage.isLoading = true;
-                                mangaModel.clear();
-                                mangaDex.getPopularManga(1);
+                                var srcBaseUrl = model.baseUrl || "https://api.mangadex.org"
+                                var srcName    = model.name
+
+                                // Set source di C++ backend sebelum fetch
+                                mangaDex.setBaseUrl(srcBaseUrl)
+                                mangaDex.setSourceName(srcName)
+                                mangaDex.setSourcePackage(model.pkg)
+
+                                selectedSource = srcName
+                                browsePage.isLoading = true
+                                mangaModel.clear()
+                                errorLabel.visible = false
+                                mangaDex.getPopularManga(1)
                             }
                         }
                     }
@@ -983,9 +985,35 @@ Page {
                 visible: running
             }
 
+            // Empty state — no repos configured
+            Column {
+                anchors.centerIn: parent
+                visible: !browsePage.isLoadingExtensions && extensionModel.count === 0
+                spacing: units.gu(1.5)
+
+                Icon {
+                    name: "stock_website"
+                    width: units.gu(6); height: units.gu(6)
+                    color: "#444444"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+                Label {
+                    text: "No extension stores configured"
+                    color: "#888888"
+                    font.pixelSize: units.gu(2)
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+                Label {
+                    text: "Go to \"···\" → Extension stores to add a repo"
+                    color: "#555555"
+                    font.pixelSize: units.gu(1.6)
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+
             ListView {
                 anchors.fill: parent
-                visible: !browsePage.isLoadingExtensions && extensionModel.count > 0
+                visible: !browsePage.isLoadingExtensions
                 clip: true
                 model: extensionModel
                 header: Item {
@@ -1089,15 +1117,72 @@ Page {
                     Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: units.dp(1); color: "#1E1E1E" }
                 }
             }
+        }
+    }
 
-            Label {
-                visible: !browsePage.isLoadingExtensions && extensionModel.count === 0
-                anchors.centerIn: parent
-                width: parent.width - units.gu(4)
-                horizontalAlignment: Text.AlignHCenter
-                text: "No extension stores configured.\nTap the menu in the top right and select 'Extension stores' to add a repository."
-                color: "#888888"
-                font.pixelSize: units.gu(1.6)
+    // Browse header menu (Extension stores)
+    MouseArea {
+        anchors.fill: parent
+        visible: browseHeaderMenu.visible
+        onClicked: browseHeaderMenu.visible = false
+        z: 9996
+    }
+
+    Rectangle {
+        id: browseHeaderMenu
+        visible: false
+        anchors.top: parent.header.bottom
+        anchors.topMargin: units.dp(4)
+        anchors.right: parent.right
+        anchors.rightMargin: units.gu(2)
+        width: units.gu(26)
+        height: browseMenuCol.height + units.gu(2)
+        color: "#1E1E1E"
+        border.color: "#2A2A2A"
+        radius: units.dp(8)
+        z: 9997
+
+        Column {
+            id: browseMenuCol
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: units.gu(1)
+            anchors.leftMargin: units.gu(1)
+            anchors.rightMargin: units.gu(1)
+
+            // Filter
+            Item {
+                width: parent.width; height: units.gu(5)
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: units.gu(1)
+                    spacing: units.gu(1.5)
+                    Icon { name: "filter"; width: units.gu(2.2); height: units.gu(2.2); color: "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                    Label { text: "Filter"; color: "white"; font.pixelSize: units.gu(1.7); anchors.verticalCenter: parent.verticalCenter }
+                }
+                MouseArea { anchors.fill: parent; onClicked: browseHeaderMenu.visible = false }
+            }
+
+            Rectangle { width: parent.width; height: units.dp(1); color: "#2A2A2A" }
+
+            // Extension stores
+            Item {
+                width: parent.width; height: units.gu(5)
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: units.gu(1)
+                    spacing: units.gu(1.5)
+                    Icon { name: "stock_website"; width: units.gu(2.2); height: units.gu(2.2); color: "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                    Label { text: "Extension stores"; color: "white"; font.pixelSize: units.gu(1.7); anchors.verticalCenter: parent.verticalCenter }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        browseHeaderMenu.visible = false
+                        if (mainStack) mainStack.push(Qt.resolvedUrl("ExtensionStoresPage.qml"))
+                    }
+                }
             }
         }
     }
@@ -1171,90 +1256,6 @@ Page {
                         onClicked: {
                             browsePage.layoutMode = modelData.mode
                             layoutSelectorDropdown.visible = false
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Popover main browse menu dropdown
-    MouseArea {
-        anchors.fill: parent
-        visible: mainBrowseDropdown.visible
-        onClicked: mainBrowseDropdown.visible = false
-        z: 9996
-    }
-
-    Rectangle {
-        id: mainBrowseDropdown
-        visible: false
-        anchors.top: parent.header.bottom
-        anchors.topMargin: units.dp(4)
-        anchors.right: parent.right
-        anchors.rightMargin: units.gu(2)
-        width: units.gu(22)
-        height: units.gu(10.5)
-        color: "#1E1E1E"
-        border.color: "#2A2A2A"
-        radius: units.dp(8)
-        z: 9997
-
-        Column {
-            anchors.fill: parent
-            anchors.margins: units.gu(1)
-            spacing: 0
-
-            Repeater {
-                model: [
-                    { label: "Filter", icon: "settings" },
-                    { label: "Extension stores", icon: "folder" }
-                ]
-                delegate: Item {
-                    width: parent.width
-                    height: units.gu(4.3)
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        radius: units.dp(4)
-                    }
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: units.gu(1)
-                        spacing: units.gu(1.5)
-
-                        Icon {
-                            name: modelData.icon
-                            width: units.gu(2.2)
-                            height: units.gu(2.2)
-                            color: "#888888"
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-
-                        Label {
-                            text: modelData.label
-                            color: "white"
-                            font.pixelSize: units.gu(1.5)
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            mainBrowseDropdown.visible = false
-                            if (modelData.label === "Extension stores") {
-                                if (mainStack) {
-                                    mainStack.push(Qt.resolvedUrl("ExtensionStoresPage.qml"), {
-                                        mainStack: mainStack,
-                                        onClosed: function() {
-                                            browsePage.loadExtensions();
-                                        }
-                                    })
-                                }
-                            }
                         }
                     }
                 }

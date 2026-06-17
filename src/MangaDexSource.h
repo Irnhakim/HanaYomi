@@ -36,15 +36,25 @@ public:
     // Setara dengan HttpSource.fetchPageList() — ambil URL gambar per bab
     Q_INVOKABLE void getPageList(const QString &chapterId);
 
-    // Set base URL dynamically (equivalent to HttpSource.baseUrl)
-    Q_INVOKABLE void setBaseUrl(const QString &url);
-
-    // Set source name dynamically (equivalent to HttpSource.name)
+    // Dinamis: set base URL dan nama source aktif dari QML
+    Q_INVOKABLE void setBaseUrl(const QString &baseUrl);
     Q_INVOKABLE void setSourceName(const QString &name);
+    Q_INVOKABLE void setSourcePackage(const QString &pkg);
+    Q_INVOKABLE QString getBaseUrl() const { return m_baseUrl; }
+    Q_INVOKABLE QString getSourceName() const { return m_sourceName; }
+    Q_INVOKABLE QString getSourcePackage() const { return m_sourcePkg; }
+    Q_INVOKABLE bool isMangaDexSource() const { return m_baseUrl.contains("mangadex.org"); }
+    Q_INVOKABLE void setNsfwEnabled(bool enabled) { m_nsfwEnabled = enabled; }
+    Q_INVOKABLE bool isNsfwEnabled() const { return m_nsfwEnabled; }
+
+    // Helper HTTP untuk Scraper JS
+    Q_INVOKABLE QString httpGet(const QString &url);
+    Q_INVOKABLE QString httpPost(const QString &url, const QString &payload, const QString &contentType = "application/x-www-form-urlencoded");
 
 signals:
     // Emitted saat daftar manga (pencarian/popular) siap
     void mangaListReady(QVariantList mangas);
+    void htmlReady(const QString &html);
 
     // Emitted saat detail manga siap
     void mangaDetailReady(QVariantMap manga);
@@ -60,11 +70,14 @@ signals:
 
 private:
     QNetworkAccessManager *m_nam;
-    QString m_baseUrl;
-    QString m_sourceName;
+    QString m_baseUrl    = "https://api.mangadex.org";
+    QString m_sourceName = "MangaDex";
+    QString m_sourcePkg;
+    bool m_nsfwEnabled   = false;
 
-    // Helper: kirim GET request dan abaikan SSL error secara eksplisit
-    QNetworkReply* sendGetRequest(const QNetworkRequest &req);
+    // Helper untuk mengeksekusi skrip scraper JS dinamis
+    QVariant runScraper(const QString &method, const QVariantList &args);
+    bool hasJsScraper();
 
     // Helper: buat QNetworkRequest dengan User-Agent yang kompatibel
     QNetworkRequest createRequest(const QUrl &url);
@@ -75,9 +88,7 @@ private:
     // Helper: ambil URL cover art dari relationships[]
     QString extractCoverUrl(const QString &mangaId, const QJsonArray &relationships);
 
-    // Madara HTML Parser Helpers
-    QVariantList parseMadaraCatalog(const QString &html);
-    QVariantMap parseMadaraDetails(const QString &html, const QString &mangaId);
-    QVariantList parseMadaraChapters(const QString &html, const QString &mangaId);
-    QVariantList parseMadaraPages(const QString &html);
+    // Helper: parse manga dari format WordPress/Madara (WP-MangaStream compatible)
+    QVariantList parseMadaraHtml(const QString &html, const QString &baseUrl);
+    QVariantList parseMangaThemeHtml(const QString &html, const QString &baseUrl);
 };
