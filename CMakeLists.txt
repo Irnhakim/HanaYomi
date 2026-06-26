@@ -11,6 +11,7 @@ add_executable(hanayomi
     src/main.cpp
     src/MangaDexSource.cpp
     src/DatabaseHelper.cpp
+    src/SuwayomiRunner.cpp
 )
 
 target_include_directories(hanayomi PRIVATE src)
@@ -26,4 +27,6 @@ target_link_libraries(hanayomi
 
 install(TARGETS hanayomi DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY qml DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY jre DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY suwayomi-lib DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES hanayomi.desktop hanayomi.apparmor manifest.json hanayomi.svg DESTINATION ${CMAKE_INSTALL_PREFIX})

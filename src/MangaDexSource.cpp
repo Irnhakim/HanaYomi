@@ -9,6 +9,8 @@
 #include <QEventLoop>
 #include <QNetworkReply>
 #include <QQmlEngine>
+#include <QStandardPaths>
+#include <QDir>
 
 MangaDexSource::MangaDexSource(QObject *parent)
     : QObject(parent)
@@ -52,24 +54,47 @@ void MangaDexSource::setSourcePackage(const QString &pkg)
     qDebug() << "MangaDexSource package set to:" << m_sourcePkg;
 }
 
+void MangaDexSource::setSuwayomiServer(const QString &url)
+{
+    m_suwayomiServer = url;
+    qDebug() << "MangaDexSource suwayomiServer set to:" << m_suwayomiServer;
+}
+
+QString MangaDexSource::getScraperPath()
+{
+    if (m_sourcePkg.isEmpty()) return QString();
+
+    // 1. Check writable user path
+    QString writableDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/scrapers";
+    QDir().mkpath(writableDir);
+    QString userPath = writableDir + "/" + m_sourcePkg + ".js";
+    if (QFile::exists(userPath)) {
+        return userPath;
+    }
+
+    // 2. Check read-only app assets path
+    QString appPath = QCoreApplication::applicationDirPath() + "/qml/scrapers/" + m_sourcePkg + ".js";
+    if (QFile::exists(appPath)) {
+        return appPath;
+    }
+
+    return QString();
+}
+
 bool MangaDexSource::hasJsScraper()
 {
-    if (m_sourcePkg.isEmpty()) return false;
-    QString path = QCoreApplication::applicationDirPath() + "/qml/scrapers/" + m_sourcePkg + ".js";
-    return QFile::exists(path);
+    return !getScraperPath().isEmpty();
 }
 
 QVariant MangaDexSource::runScraper(const QString &method, const QVariantList &args)
 {
-    if (m_sourcePkg.isEmpty()) return QVariant();
-
-    QString path = QCoreApplication::applicationDirPath() + "/qml/scrapers/" + m_sourcePkg + ".js";
-    QFile file(path);
-    if (!file.exists()) {
-        qDebug() << "Scraper file does not exist at:" << path;
+    QString path = getScraperPath();
+    if (path.isEmpty()) {
+        qDebug() << "Scraper file does not exist for package:" << m_sourcePkg;
         return QVariant();
     }
 
+    QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "Failed to open scraper file at:" << path;
         return QVariant();
@@ -81,6 +106,7 @@ QVariant MangaDexSource::runScraper(const QString &method, const QVariantList &a
     QJSEngine engine;
     QJSValue httpObj = engine.newQObject(this);
     engine.globalObject().setProperty("http", httpObj);
+    engine.globalObject().setProperty("suwayomiServer", m_suwayomiServer);
 
     QJSValue scraperObj = engine.evaluate("(" + jsCode + ")");
     if (scraperObj.isError()) {

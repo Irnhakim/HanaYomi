@@ -8,6 +8,7 @@
 #include <QDir>
 #include "MangaDexSource.h"
 #include "DatabaseHelper.h"
+#include "SuwayomiRunner.h"
 
 // Factory to inject User-Agent globally into all QML network requests (like Image loading)
 class CustomNetworkAccessManager : public QNetworkAccessManager
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
     // Initialize backend services
     MangaDexSource mangaDex;
     DatabaseHelper db;
+    SuwayomiRunner suwayomiRunner;
 
     if (!db.initialize()) {
         qCritical() << "Failed to initialize database!";
@@ -53,6 +55,7 @@ int main(int argc, char *argv[])
     // Register C++ objects as QML context properties
     view.engine()->rootContext()->setContextProperty("mangaDex", &mangaDex);
     view.engine()->rootContext()->setContextProperty("db", &db);
+    view.engine()->rootContext()->setContextProperty("suwayomiRunner", &suwayomiRunner);
 
     // Load main QML file
     QString qmlPath = QCoreApplication::applicationDirPath() + "/qml/Main.qml";

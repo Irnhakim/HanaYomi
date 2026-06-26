@@ -2,7 +2,7 @@ import QtQuick 2.9
 import Lomiri.Components 1.3
 import Qt.labs.settings 1.0
 
-// Browse page — terhubung ke C++ MangaDexSource & Keiyoushi Extensions
+// Browse page — terhubung ke C++ MangaDexSource, Keiyoushi Extensions & Suwayomi backend
 Page {
     id: browsePage
     property var mainStack: null
@@ -14,6 +14,26 @@ Page {
     property string extensionSearchQuery: ""
     property string selectedLanguageFilter: "All"
     property string layoutMode: "comfortable"
+
+    // Suwayomi backend integration
+    property string suwayomiServer: suwayomiRunner.isRunning ? suwayomiRunner.baseUrl : ""
+    property bool isLoadingSuwayomi: false
+    property var suwayomiSources: []  // cache sources dari Suwayomi API
+    property var activeSyncingPkgs: []
+    property var failedSyncingPkgs: []
+
+    // Peta pkg name → Suwayomi source ID (untuk scraper JS)
+    // Source ID ini harus cocok dengan _sourceId di file .js scraper
+    property var suwayomiPkgMap: ({
+        "eu.kanade.tachiyomi.extension.id.westmanga":    "8883916630998758688",
+        "eu.kanade.tachiyomi.extension.id.shinigami":    "3411809758861089969",
+        "eu.kanade.tachiyomi.extension.id.klikmanga":    "5213948951740602020",
+        "eu.kanade.tachiyomi.extension.id.komiku":       "4838485846640015979",
+        "eu.kanade.tachiyomi.extension.id.komikucom":    "8489420317813224728",
+        "eu.kanade.tachiyomi.extension.id.kiryuu":       "3639673976007021338",
+        "eu.kanade.tachiyomi.extension.id.komikcast":    "972717448578983812",
+        "eu.kanade.tachiyomi.extension.id.cosmicscansid":"6559481336553833282"
+    })
 
     Rectangle { anchors.fill: parent; color: "#111111" }
 
@@ -44,7 +64,24 @@ Page {
         if (pkgs.indexOf(pkg) === -1) {
             pkgs.push(pkg);
             settings.installedPkgs = JSON.stringify(pkgs);
-            refreshActiveSources();
+            if (suwayomiServer && suwayomiServer !== "") {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        if (xhr.status === 200 || xhr.status === 201 || xhr.status === 302) {
+                            console.log("Suwayomi installed extension: " + pkg);
+                            loadSuwayomiSources();
+                        } else {
+                            console.log("Suwayomi failed to install extension: " + xhr.statusText);
+                            refreshActiveSources();
+                        }
+                    }
+                };
+                xhr.open("GET", suwayomiServer + "/api/v1/extension/install/" + pkg);
+                xhr.send();
+            } else {
+                refreshActiveSources();
+            }
         }
     }
 
@@ -54,35 +91,189 @@ Page {
         if (idx !== -1) {
             pkgs.splice(idx, 1);
             settings.installedPkgs = JSON.stringify(pkgs);
-            refreshActiveSources();
+            if (suwayomiServer && suwayomiServer !== "") {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        if (xhr.status === 200) {
+                            console.log("Suwayomi uninstalled extension: " + pkg);
+                            loadSuwayomiSources();
+                        } else {
+                            console.log("Suwayomi failed to uninstall extension: " + xhr.statusText);
+                            refreshActiveSources();
+                        }
+                    }
+                };
+                xhr.open("GET", suwayomiServer + "/api/v1/extension/uninstall/" + pkg);
+                xhr.send();
+            } else {
+                refreshActiveSources();
+            }
         }
     }
 
     function refreshActiveSources() {
         activeSourcesModel.clear();
-        // MangaDex built-in source
+
+        // MangaDex built-in source (always shown)
         activeSourcesModel.append({
             "name": "MangaDex",
             "pkg": "eu.kanade.tachiyomi.extension.en.mangadex",
             "lang": "en",
             "baseUrl": "https://api.mangadex.org",
-            "isBuiltIn": true
+            "isBuiltIn": true,
+            "isSuwayomi": false
         });
 
-        // Tambah ekstensi yang telah di-install
+        // Suwayomi backend sources (selalu ditampilkan jika tersedia)
+        // Peta Suwayomi source ID → pkg name untuk JS scraper
+        var suwayomiIdToPkg = {
+            "8883916630998758688": "eu.kanade.tachiyomi.extension.id.westmanga",
+            "3411809758861089969": "eu.kanade.tachiyomi.extension.id.shinigami",
+            "5213948951740602020": "eu.kanade.tachiyomi.extension.id.klikmanga",
+            "4838485846640015979": "eu.kanade.tachiyomi.extension.id.komiku",
+            "8489420317813224728": "eu.kanade.tachiyomi.extension.id.komikucom",
+            "3639673976007021338": "eu.kanade.tachiyomi.extension.id.kiryuu",
+            "972717448578983812":  "eu.kanade.tachiyomi.extension.id.komikcast",
+            "6559481336553833282": "eu.kanade.tachiyomi.extension.id.cosmicscansid"
+        };
+
+        for (var s = 0; s < suwayomiSources.length; s++) {
+            var src = suwayomiSources[s];
+            if (src.id === "0") continue; // skip Local source
+            var pkg = suwayomiIdToPkg[src.id] || ("suwayomi." + src.id);
+            activeSourcesModel.append({
+                "name": src.displayName || src.name,
+                "pkg": pkg,
+                "lang": src.lang || "id",
+                "baseUrl": src.baseUrl || "",
+                "isBuiltIn": false,
+                "isSuwayomi": true,
+                "suwayomiId": src.id
+            });
+        }
+
+        // Tambah ekstensi Keiyoushi yang telah di-install (selain yang sudah ada di Suwayomi)
         var pkgs = JSON.parse(settings.installedPkgs);
+        var suwayomiPkgs = suwayomiSources.map(function(s) { return s.pkgName || ""; });
         for (var i = 0; i < extensionModel.count; i++) {
             var ext = extensionModel.get(i);
-            if (pkgs.indexOf(ext.pkg) !== -1 && ext.pkg !== "eu.kanade.tachiyomi.extension.en.mangadex") {
+            if (pkgs.indexOf(ext.pkg) !== -1
+                && ext.pkg !== "eu.kanade.tachiyomi.extension.en.mangadex"
+                && suwayomiPkgs.indexOf(ext.pkg) === -1) {
                 activeSourcesModel.append({
                     "name": ext.name.replace("Tachiyomi: ", ""),
                     "pkg": ext.pkg,
                     "lang": ext.lang,
                     "baseUrl": ext.baseUrl || "",
-                    "isBuiltIn": false
+                    "isBuiltIn": false,
+                    "isSuwayomi": false
                 });
             }
         }
+    }
+
+    // Fetch daftar sources yang aktif dari Suwayomi backend
+    function loadSuwayomiSources() {
+        if (!suwayomiServer || suwayomiServer === "" || isLoadingSuwayomi) return;
+        isLoadingSuwayomi = true;
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                isLoadingSuwayomi = false;
+                if (xhr.status === 200) {
+                    try {
+                        var sources = JSON.parse(xhr.responseText);
+                        // Hanya tampilkan source yang bukan Local source
+                        browsePage.suwayomiSources = sources.filter(function(s) {
+                            return s.id !== "0";
+                        });
+                        console.log("Suwayomi sources loaded: " + browsePage.suwayomiSources.length);
+                        refreshActiveSources();
+                        syncInstalledExtensionsToSuwayomi();
+                    } catch (e) {
+                        console.log("Failed to parse Suwayomi sources: " + e);
+                    }
+                } else {
+                    console.log("Suwayomi server not available: " + xhr.status);
+                }
+            }
+        };
+        xhr.open("GET", suwayomiServer + "/api/v1/source/list");
+        xhr.send();
+    }
+
+    function syncInstalledExtensionsToSuwayomi() {
+        if (!suwayomiServer || suwayomiServer === "") return;
+        var pkgs = [];
+        try {
+            pkgs = JSON.parse(settings.installedPkgs);
+        } catch(e) {
+            return;
+        }
+        if (pkgs.length === 0) return;
+
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                try {
+                    var backendExtensions = JSON.parse(xhr.responseText);
+                    var installedMap = {};
+                    for (var i = 0; i < backendExtensions.length; i++) {
+                        var ext = backendExtensions[i];
+                        if (ext.isInstalled) {
+                            installedMap[ext.pkgName] = true;
+                        }
+                    }
+                    
+                    var toInstall = [];
+                    pkgs.forEach(function(pkg) {
+                        if (pkg !== "eu.kanade.tachiyomi.extension.en.mangadex" && !installedMap[pkg]) {
+                            if (activeSyncingPkgs.indexOf(pkg) === -1 && failedSyncingPkgs.indexOf(pkg) === -1) {
+                                toInstall.push(pkg);
+                            }
+                        }
+                    });
+
+                    if (toInstall.length === 0) return;
+
+                    var pkgToInstall = toInstall[0];
+                    var newSyncList = activeSyncingPkgs.slice();
+                    newSyncList.push(pkgToInstall);
+                    activeSyncingPkgs = newSyncList;
+
+                    console.log("Syncing: Installing extension in Suwayomi backend: " + pkgToInstall);
+                    var instXhr = new XMLHttpRequest();
+                    instXhr.onreadystatechange = function() {
+                        if (instXhr.readyState === XMLHttpRequest.DONE) {
+                            var currentSyncs = activeSyncingPkgs.slice();
+                            var idx = currentSyncs.indexOf(pkgToInstall);
+                            if (idx !== -1) {
+                                currentSyncs.splice(idx, 1);
+                                activeSyncingPkgs = currentSyncs;
+                            }
+
+                            if (instXhr.status === 200 || instXhr.status === 201) {
+                                console.log("Sync installed successfully: " + pkgToInstall);
+                                loadSuwayomiSources();
+                            } else {
+                                console.log("Sync install failed for " + pkgToInstall + ": " + instXhr.status);
+                                var newFailedList = failedSyncingPkgs.slice();
+                                newFailedList.push(pkgToInstall);
+                                failedSyncingPkgs = newFailedList;
+                                syncInstalledExtensionsToSuwayomi();
+                            }
+                        }
+                    };
+                    instXhr.open("GET", suwayomiServer + "/api/v1/extension/install/" + pkgToInstall);
+                    instXhr.send();
+                } catch(e) {
+                    console.log("Failed to sync extensions: " + e);
+                }
+            }
+        };
+        xhr.open("GET", suwayomiServer + "/api/v1/extension/list");
+        xhr.send();
     }
 
     // --- Extension repo helpers ---
@@ -184,7 +375,17 @@ Page {
 
     Component.onCompleted: {
         mangaDex.setNsfwEnabled(appSettings.nsfwEnabled);
-        loadExtensions(false);
+        if (suwayomiRunner.isRunning) {
+            loadSuwayomiSources();  // Load if already running
+        }
+        loadExtensions(false);  // Then load Keiyoushi extensions
+    }
+
+    Connections {
+        target: suwayomiRunner
+        onReady: {
+            loadSuwayomiSources();
+        }
     }
 
     onVisibleChanged: {
@@ -832,8 +1033,8 @@ Page {
                             font.bold: true
                         }
                         Label {
-                            text: model.lang.toUpperCase() + (model.isBuiltIn ? " • Built-in Source" : " • Extension Source")
-                            color: "#888888"
+                            text: model.lang.toUpperCase() + (model.isBuiltIn ? " • Built-in Source" : (model.isSuwayomi ? " • via Suwayomi ✓" : " • Extension Source"))
+                            color: model.isSuwayomi ? "#4CAF50" : "#888888"
                             font.pixelSize: units.gu(1.4)
                         }
                     }
@@ -862,6 +1063,7 @@ Page {
                                 mangaDex.setBaseUrl(srcBaseUrl)
                                 mangaDex.setSourceName(srcName)
                                 mangaDex.setSourcePackage(model.pkg)
+                                mangaDex.setSuwayomiServer(suwayomiServer)
 
                                 selectedSource = srcName
                                 browsePage.isLoading = true

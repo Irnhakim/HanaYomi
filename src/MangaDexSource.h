@@ -40,6 +40,7 @@ public:
     Q_INVOKABLE void setBaseUrl(const QString &baseUrl);
     Q_INVOKABLE void setSourceName(const QString &name);
     Q_INVOKABLE void setSourcePackage(const QString &pkg);
+    Q_INVOKABLE void setSuwayomiServer(const QString &url);
     Q_INVOKABLE QString getBaseUrl() const { return m_baseUrl; }
     Q_INVOKABLE QString getSourceName() const { return m_sourceName; }
     Q_INVOKABLE QString getSourcePackage() const { return m_sourcePkg; }
@@ -73,11 +74,13 @@ private:
     QString m_baseUrl    = "https://api.mangadex.org";
     QString m_sourceName = "MangaDex";
     QString m_sourcePkg;
+    QString m_suwayomiServer;
     bool m_nsfwEnabled   = false;
 
     // Helper untuk mengeksekusi skrip scraper JS dinamis
     QVariant runScraper(const QString &method, const QVariantList &args);
     bool hasJsScraper();
+    QString getScraperPath();
 
     // Helper: buat QNetworkRequest dengan User-Agent yang kompatibel
     QNetworkRequest createRequest(const QUrl &url);

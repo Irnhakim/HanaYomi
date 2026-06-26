@@ -142,6 +142,7 @@ MainView {
             Component { id: moreComp;     MorePage     { mainStack: mainPageStack } }
 
             Component.onCompleted: {
+                suwayomiRunner.start()
                 contentLoader.sourceComponent = libComp
             }
         }
