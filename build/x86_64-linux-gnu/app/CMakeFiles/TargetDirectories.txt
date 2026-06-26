@@ -1,8 +1,0 @@
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/hanayomi.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/edit_cache.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/rebuild_cache.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/list_install_components.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/install.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/install/local.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/install/strip.dir
-/home/hakim/Projects/HanaYomi/build/x86_64-linux-gnu/app/CMakeFiles/hanayomi_autogen.dir

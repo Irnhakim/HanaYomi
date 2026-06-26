@@ -1,0 +1,11 @@
+# Build hasil kompilasi
+build/
+
+# File sementara
+*.o
+*.obj
+*.log
+
+# Folder IDE (opsional)
+.vscode/
+.idea/
