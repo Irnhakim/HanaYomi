@@ -84,6 +84,9 @@ void SuwayomiRunner::start()
     connect(m_process, &QProcess::readyReadStandardOutput, this, &SuwayomiRunner::readProcessOutput);
     connect(m_process, &QProcess::readyReadStandardError, this, &SuwayomiRunner::readProcessOutput);
     QStringList arguments;
+    arguments << "-Xmx96m";
+    arguments << "-Xms32m";
+    arguments << "-XX:+UseSerialGC";
     arguments << QString("-Dsuwayomi.tachidesk.config.server.port=%1").arg(m_port);
     arguments << "-Dsuwayomi.tachidesk.config.server.ip=127.0.0.1";
     arguments << QString("-Dsuwayomi.tachidesk.config.server.rootDir=%1").arg(rootDir);
