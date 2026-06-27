@@ -21,6 +21,7 @@ Page {
     property var suwayomiSources: []  // cache sources dari Suwayomi API
     property var activeSyncingPkgs: []
     property var failedSyncingPkgs: []
+    property var succeededSyncingPkgs: []
 
     // Peta pkg name → Suwayomi source ID (untuk scraper JS)
     // Source ID ini harus cocok dengan _sourceId di file .js scraper
@@ -155,7 +156,17 @@ Page {
 
         // Tambah ekstensi Keiyoushi yang telah di-install (selain yang sudah ada di Suwayomi)
         var pkgs = JSON.parse(settings.installedPkgs);
-        var suwayomiPkgs = suwayomiSources.map(function(s) { return s.pkgName || ""; });
+        
+        // Buat list package yang sudah dimasukkan sebagai Suwayomi source
+        var suwayomiPkgs = [];
+        for (var s = 0; s < suwayomiSources.length; s++) {
+            var src = suwayomiSources[s];
+            if (src.id !== "0") {
+                var pkg = suwayomiIdToPkg[src.id] || src.pkg || ("suwayomi." + src.id);
+                suwayomiPkgs.push(pkg);
+            }
+        }
+
         for (var i = 0; i < extensionModel.count; i++) {
             var ext = extensionModel.get(i);
             if (pkgs.indexOf(ext.pkg) !== -1
@@ -190,7 +201,10 @@ Page {
                         });
                         console.log("Suwayomi sources loaded: " + browsePage.suwayomiSources.length);
                         refreshActiveSources();
-                        syncInstalledExtensionsToSuwayomi();
+                        // Only trigger sync if we haven't already done a sync this session
+                        if (succeededSyncingPkgs.length === 0 && failedSyncingPkgs.length === 0) {
+                            syncInstalledExtensionsToSuwayomi();
+                        }
                     } catch (e) {
                         console.log("Failed to parse Suwayomi sources: " + e);
                     }
@@ -229,13 +243,20 @@ Page {
                     var toInstall = [];
                     pkgs.forEach(function(pkg) {
                         if (pkg !== "eu.kanade.tachiyomi.extension.en.mangadex" && !installedMap[pkg]) {
-                            if (activeSyncingPkgs.indexOf(pkg) === -1 && failedSyncingPkgs.indexOf(pkg) === -1) {
+                            if (activeSyncingPkgs.indexOf(pkg) === -1 &&
+                                failedSyncingPkgs.indexOf(pkg) === -1 &&
+                                succeededSyncingPkgs.indexOf(pkg) === -1) {
                                 toInstall.push(pkg);
                             }
                         }
                     });
 
-                    if (toInstall.length === 0) return;
+                    if (toInstall.length === 0) {
+                        // All extensions are synced — just refresh the active sources list
+                        // Do NOT call loadSuwayomiSources() here to avoid mutual recursion
+                        refreshActiveSources();
+                        return;
+                    }
 
                     var pkgToInstall = toInstall[0];
                     var newSyncList = activeSyncingPkgs.slice();
@@ -253,9 +274,15 @@ Page {
                                 activeSyncingPkgs = currentSyncs;
                             }
 
-                            if (instXhr.status === 200 || instXhr.status === 201) {
-                                console.log("Sync installed successfully: " + pkgToInstall);
-                                loadSuwayomiSources();
+                            if (instXhr.status === 200 || instXhr.status === 201 || instXhr.status === 302) {
+                                // 201 = newly installed, 302 = already installed (FOUND), both are success
+                                console.log("Sync installed successfully (status " + instXhr.status + "): " + pkgToInstall);
+                                // Track as succeeded so we don't retry it in recursive calls
+                                var newSucceededList = succeededSyncingPkgs.slice();
+                                newSucceededList.push(pkgToInstall);
+                                succeededSyncingPkgs = newSucceededList;
+                                // Continue syncing remaining extensions
+                                syncInstalledExtensionsToSuwayomi();
                             } else {
                                 console.log("Sync install failed for " + pkgToInstall + ": " + instXhr.status);
                                 var newFailedList = failedSyncingPkgs.slice();
