@@ -43,7 +43,11 @@ QString SuwayomiRunner::findLibDir()
     }
 
     // Try app directory relative paths (for clickable build & deployment)
-    QString appDirLib = QCoreApplication::applicationDirPath() + "/suwayomi-lib";
+    QString appDir = qgetenv("APP_DIR");
+    if (appDir.isEmpty()) {
+        appDir = QCoreApplication::applicationDirPath();
+    }
+    QString appDirLib = appDir + "/suwayomi-lib";
     if (QDir(appDirLib).exists()) {
         return appDirLib;
     }
@@ -90,9 +94,14 @@ void SuwayomiRunner::start()
     arguments << "-cp" << QString("%1/*").arg(libDir);
     arguments << "suwayomi.tachidesk.MainKt";
 
+    QString appDir = qgetenv("APP_DIR");
+    if (appDir.isEmpty()) {
+        appDir = QCoreApplication::applicationDirPath();
+    }
+
     QString javaExec = "java";
     QStringList possibleJavaPaths = {
-        QCoreApplication::applicationDirPath() + "/jre/bin/java",
+        appDir + "/jre/bin/java",
         "/home/hakim/Projects/HanaYomi/jre/bin/java"
     };
     for (const QString &path : possibleJavaPaths) {

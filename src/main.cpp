@@ -57,8 +57,13 @@ int main(int argc, char *argv[])
     view.engine()->rootContext()->setContextProperty("db", &db);
     view.engine()->rootContext()->setContextProperty("suwayomiRunner", &suwayomiRunner);
 
-    // Load main QML file
-    QString qmlPath = QCoreApplication::applicationDirPath() + "/qml/Main.qml";
+    // Load main QML file, respect APP_DIR on Ubuntu Touch
+    QString appDir = qgetenv("APP_DIR");
+    if (appDir.isEmpty()) {
+        appDir = QCoreApplication::applicationDirPath();
+    }
+    QString qmlPath = appDir + "/qml/Main.qml";
+    qDebug() << "Loading QML from:" << qmlPath;
     view.setSource(QUrl::fromLocalFile(qmlPath));
     view.setResizeMode(QQuickView::SizeRootObjectToView);
     view.show();
