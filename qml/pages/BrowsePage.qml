@@ -465,7 +465,7 @@ Page {
                         Label {
                             anchors.centerIn: parent
                             text: modelData
-                            color: browsePage.activeTab === index ? "#4A90D9" : "#888888"
+                            color: browsePage.activeTab === index ? "#00bfa5" : "#888888"
                             font.pixelSize: units.gu(1.9)
                             font.bold: browsePage.activeTab === index
                         }
@@ -473,7 +473,7 @@ Page {
                             visible: browsePage.activeTab === index
                             anchors.bottom: parent.bottom
                             width: parent.width; height: units.dp(2)
-                            color: "#4A90D9"
+                            color: "#00bfa5"
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -636,11 +636,10 @@ Page {
             }
         }
 
-        // ---- VIEW 1: Browsing list manga dalam source tertentu ----
         Item {
             visible: selectedSource !== ""
             width: parent.width
-            height: visible ? parent.height : 0
+            height: visible ? (parent.height - y) : 0
 
             // Search bar
             Item {
@@ -1003,7 +1002,7 @@ Page {
         ListView {
             visible: selectedSource === "" && browsePage.activeTab === 0 && browsePage.globalSearchQuery === ""
             width: parent.width
-            height: parent.height - units.gu(18.5)
+            height: visible ? (parent.height - y) : 0
             clip: true
             model: activeSourcesModel
 
@@ -1100,7 +1099,7 @@ Page {
         ListView {
             visible: selectedSource === "" && browsePage.activeTab === 0 && browsePage.globalSearchQuery !== ""
             width: parent.width
-            height: parent.height - units.gu(18.5)
+            height: visible ? (parent.height - y) : 0
             clip: true
             model: mangaModel
 
@@ -1193,11 +1192,10 @@ Page {
             }
         }
 
-        // ---- VIEW 3: Daftar Extensions Store (Tab 1) ----
         Item {
             visible: selectedSource === "" && browsePage.activeTab === 1
             width: parent.width
-            height: parent.height - units.gu(18.5)
+            height: visible ? (parent.height - y) : 0
 
             ActivityIndicator {
                 anchors.centerIn: parent
