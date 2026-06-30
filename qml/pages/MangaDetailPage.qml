@@ -151,7 +151,7 @@ Page {
                         }
                         Label {
                             text: mangaDex.getSourceName()
-                            color: "#4A90D9"
+                            color: "#00bfa5"
                             font.pixelSize: units.gu(1.5)
                         }
                     }
@@ -177,12 +177,12 @@ Page {
                             name: isFavorite ? "starred" : "bookmark-new"
                             width: units.gu(3.5)
                             height: units.gu(3.5)
-                            color: isFavorite ? "#4A90D9" : "white"
+                            color: isFavorite ? "#00bfa5" : "white"
                             anchors.horizontalCenter: parent.horizontalCenter
                         }
                         Label {
                             text: isFavorite ? "In Library" : "Add to Library"
-                            color: isFavorite ? "#4A90D9" : "white"
+                            color: isFavorite ? "#00bfa5" : "white"
                             font.pixelSize: units.gu(1.5)
                             anchors.horizontalCenter: parent.horizontalCenter
                         }
@@ -438,10 +438,10 @@ Page {
 
                             Rectangle {
                                 width: units.gu(2.5); height: units.gu(2.5); radius: units.dp(4)
-                                color: isChecked ? "#1A3A6A" : "transparent"
-                                border.color: isChecked ? "#4A90D9" : "#888888"
+                                color: isChecked ? "#004d40" : "transparent"
+                                border.color: isChecked ? "#00bfa5" : "#888888"
                                 anchors.verticalCenter: parent.verticalCenter
-                                Label { anchors.centerIn: parent; text: "✓"; color: "#4A90D9"; visible: isChecked; font.bold: true }
+                                Label { anchors.centerIn: parent; text: "✓"; color: "#00bfa5"; visible: isChecked; font.bold: true }
                             }
 
                             Label {
@@ -491,7 +491,7 @@ Page {
                         width: parent.width / 2 - units.gu(0.75)
                         height: parent.height
                         radius: units.dp(6)
-                        color: "#4A90D9"
+                        color: "#00bfa5"
                         Label { anchors.centerIn: parent; text: "Save"; color: "white"; font.bold: true }
                         MouseArea {
                             anchors.fill: parent

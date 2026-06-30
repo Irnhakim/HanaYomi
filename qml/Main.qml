@@ -96,7 +96,7 @@ MainView {
                                 width: units.gu(8)
                                 height: units.gu(3.2)
                                 radius: height / 2
-                                color: "#264A90D9"
+                                color: "#2600bfa5"
                                 Behavior on opacity { NumberAnimation { duration: 150 } }
                             }
 
@@ -109,13 +109,13 @@ MainView {
                                     name: modelData.icon
                                     width: units.gu(2.8)
                                     height: units.gu(2.8)
-                                    color: isSelected ? "#4A90D9" : "#888888"
+                                    color: isSelected ? "#00bfa5" : "#888888"
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     Behavior on color { ColorAnimation { duration: 150 } }
                                 }
                                 Label {
                                     text: modelData.label
-                                    color: isSelected ? "#4A90D9" : "#888888"
+                                    color: isSelected ? "#00bfa5" : "#888888"
                                     font.pixelSize: units.gu(1.2)
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     Behavior on color { ColorAnimation { duration: 150 } }

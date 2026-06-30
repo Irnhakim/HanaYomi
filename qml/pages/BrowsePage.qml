@@ -614,14 +614,14 @@ Page {
                             width: filterLabel.implicitWidth + units.gu(3)
                             height: units.gu(3.2)
                             radius: height / 2
-                            color: browsePage.selectedLanguageFilter === modelData.code ? "#264A90D9" : "#1E1E1E"
-                            border.color: browsePage.selectedLanguageFilter === modelData.code ? "#4A90D9" : "#2A2A2A"
+                            color: browsePage.selectedLanguageFilter === modelData.code ? "#2600bfa5" : "#1E1E1E"
+                            border.color: browsePage.selectedLanguageFilter === modelData.code ? "#00bfa5" : "#2A2A2A"
 
                             Label {
                                 id: filterLabel
                                 anchors.centerIn: parent
                                 text: modelData.label
-                                color: browsePage.selectedLanguageFilter === modelData.code ? "#4A90D9" : "#888888"
+                                color: browsePage.selectedLanguageFilter === modelData.code ? "#00bfa5" : "#888888"
                                 font.bold: browsePage.selectedLanguageFilter === modelData.code
                                 font.pixelSize: units.gu(1.4)
                             }
@@ -687,14 +687,14 @@ Page {
                     width: (parent.width - units.gu(3)) / 3
                     height: units.gu(4)
                     radius: units.dp(6)
-                    color: parent.activeFilter === "popular" ? "#264A90D9" : "#1E1E1E"
-                    border.color: parent.activeFilter === "popular" ? "#4A90D9" : "#2A2A2A"
+                    color: parent.activeFilter === "popular" ? "#2600bfa5" : "#1E1E1E"
+                    border.color: parent.activeFilter === "popular" ? "#00bfa5" : "#2A2A2A"
 
                     Row {
                         anchors.centerIn: parent
                         spacing: units.dp(6)
-                        Icon { name: "like"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "popular" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
-                        Label { text: "Popular"; color: parent.parent.parent.activeFilter === "popular" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "popular"; anchors.verticalCenter: parent.verticalCenter }
+                        Icon { name: "like"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "popular" ? "#00bfa5" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Popular"; color: parent.parent.parent.activeFilter === "popular" ? "#00bfa5" : "#888888"; font.bold: parent.parent.parent.activeFilter === "popular"; anchors.verticalCenter: parent.verticalCenter }
                     }
 
                     MouseArea {
@@ -712,14 +712,14 @@ Page {
                     width: (parent.width - units.gu(3)) / 3
                     height: units.gu(4)
                     radius: units.dp(6)
-                    color: parent.activeFilter === "latest" ? "#264A90D9" : "#1E1E1E"
-                    border.color: parent.activeFilter === "latest" ? "#4A90D9" : "#2A2A2A"
+                    color: parent.activeFilter === "latest" ? "#2600bfa5" : "#1E1E1E"
+                    border.color: parent.activeFilter === "latest" ? "#00bfa5" : "#2A2A2A"
 
                     Row {
                         anchors.centerIn: parent
                         spacing: units.dp(6)
-                        Icon { name: "clock"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "latest" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
-                        Label { text: "Latest"; color: parent.parent.parent.activeFilter === "latest" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "latest"; anchors.verticalCenter: parent.verticalCenter }
+                        Icon { name: "clock"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "latest" ? "#00bfa5" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Latest"; color: parent.parent.parent.activeFilter === "latest" ? "#00bfa5" : "#888888"; font.bold: parent.parent.parent.activeFilter === "latest"; anchors.verticalCenter: parent.verticalCenter }
                     }
 
                     MouseArea {
@@ -737,14 +737,14 @@ Page {
                     width: (parent.width - units.gu(3)) / 3
                     height: units.gu(4)
                     radius: units.dp(6)
-                    color: parent.activeFilter === "filter" ? "#264A90D9" : "#1E1E1E"
-                    border.color: parent.activeFilter === "filter" ? "#4A90D9" : "#2A2A2A"
+                    color: parent.activeFilter === "filter" ? "#2600bfa5" : "#1E1E1E"
+                    border.color: parent.activeFilter === "filter" ? "#00bfa5" : "#2A2A2A"
 
                     Row {
                         anchors.centerIn: parent
                         spacing: units.dp(6)
-                        Icon { name: "settings"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "filter" ? "#4A90D9" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
-                        Label { text: "Filter"; color: parent.parent.parent.activeFilter === "filter" ? "#4A90D9" : "#888888"; font.bold: parent.parent.parent.activeFilter === "filter"; anchors.verticalCenter: parent.verticalCenter }
+                        Icon { name: "settings"; width: units.gu(2); height: units.gu(2); color: parent.parent.activeFilter === "filter" ? "#00bfa5" : "#888888"; anchors.verticalCenter: parent.verticalCenter }
+                        Label { text: "Filter"; color: parent.parent.parent.activeFilter === "filter" ? "#00bfa5" : "#888888"; font.bold: parent.parent.parent.activeFilter === "filter"; anchors.verticalCenter: parent.verticalCenter }
                     }
 
                     MouseArea {
@@ -1062,12 +1062,12 @@ Page {
                         width: units.gu(8)
                         height: units.gu(3.2)
                         anchors.verticalCenter: parent.verticalCenter
-                        color: "#1A3A6A"
+                        color: "#004d40"
                         radius: units.dp(4)
                         Label {
                             anchors.centerIn: parent
                             text: "Browse"
-                            color: "#4A90D9"
+                            color: "#00bfa5"
                             font.pixelSize: units.gu(1.3)
                             font.bold: true
                         }

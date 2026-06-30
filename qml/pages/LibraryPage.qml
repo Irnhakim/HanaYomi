@@ -110,7 +110,7 @@ Page {
                         id: tabLabel
                         anchors.centerIn: parent
                         text: model.name
-                        color: selectedCategoryIndex === index ? "#4A90D9" : "#888888"
+                        color: selectedCategoryIndex === index ? "#00bfa5" : "#888888"
                         font.pixelSize: units.gu(1.7)
                         font.bold: selectedCategoryIndex === index
                     }
@@ -118,7 +118,7 @@ Page {
                         visible: selectedCategoryIndex === index
                         anchors.bottom: parent.bottom
                         width: parent.width; height: units.dp(2)
-                        color: "#4A90D9"
+                        color: "#00bfa5"
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -234,12 +234,12 @@ Page {
                         width: Math.max(units.gu(4), unreadLbl.width + units.gu(1.5))
                         height: units.gu(2.8)
                         radius: units.dp(4)
-                        color: "#1A3A6A"
+                        color: "#004d40"
                         Label {
                             id: unreadLbl
                             anchors.centerIn: parent
                             text: model.unreadCount || ""
-                            color: "#4A90D9"; font.pixelSize: units.gu(1.4); font.bold: true
+                            color: "#00bfa5"; font.pixelSize: units.gu(1.4); font.bold: true
                         }
                     }
                 }
