@@ -150,7 +150,7 @@ Page {
                             font.pixelSize: units.gu(1.5)
                         }
                         Label {
-                            text: "MangaDex"
+                            text: mangaDex.getSourceName()
                             color: "#4A90D9"
                             font.pixelSize: units.gu(1.5)
                         }

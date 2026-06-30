@@ -116,15 +116,6 @@ Page {
     function refreshActiveSources() {
         activeSourcesModel.clear();
 
-        // MangaDex built-in source (always shown)
-        activeSourcesModel.append({
-            "name": "MangaDex",
-            "pkg": "eu.kanade.tachiyomi.extension.en.mangadex",
-            "lang": "en",
-            "baseUrl": "https://api.mangadex.org",
-            "isBuiltIn": true,
-            "isSuwayomi": false
-        });
 
         // Suwayomi backend sources (selalu ditampilkan jika tersedia)
         // Peta Suwayomi source ID → pkg name untuk JS scraper
