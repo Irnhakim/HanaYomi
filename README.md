@@ -75,6 +75,12 @@ The project splits performance-critical backend tasks (database operations and A
 
 ---
 
+## Disclaimer
+
+The developer(s) of this application does not have any affiliation with the content providers available, and this application hosts zero content.
+
+---
+
 ## License
 
 HanaYomi is licensed under the Apache License 2.0. See the `LICENSE` file for details.
