@@ -36,8 +36,8 @@ public:
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    app.setApplicationName("HanaYomi");
-    app.setOrganizationName("hakim");
+    app.setApplicationName("hanayomi.hakim");
+    app.setOrganizationName("");
 
     // Initialize backend services
     MangaDexSource mangaDex;

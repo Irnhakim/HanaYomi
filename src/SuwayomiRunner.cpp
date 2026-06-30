@@ -71,6 +71,12 @@ void SuwayomiRunner::start()
     emit baseUrlChanged(baseUrl());
 
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    // Ubuntu Touch fallback/override
+    if (qEnvironmentVariableIsSet("XDG_DATA_HOME")) {
+        appDataDir = QString::fromLocal8Bit(qgetenv("XDG_DATA_HOME")) + "/hanayomi.hakim";
+    } else {
+        appDataDir = QDir::homePath() + "/.local/share/hanayomi.hakim";
+    }
     QString rootDir = appDataDir + "/Tachidesk";
     QDir().mkpath(rootDir);
     QDir().mkpath(rootDir + "/tmp");

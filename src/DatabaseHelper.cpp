@@ -11,6 +11,13 @@ DatabaseHelper::~DatabaseHelper() {
 
 bool DatabaseHelper::initialize() {
     QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    // Ubuntu Touch fallback/override
+    if (qEnvironmentVariableIsSet("XDG_DATA_HOME")) {
+        dataDir = QString::fromLocal8Bit(qgetenv("XDG_DATA_HOME")) + "/hanayomi.hakim";
+    } else {
+        dataDir = QDir::homePath() + "/.local/share/hanayomi.hakim";
+    }
+    
     QDir().mkpath(dataDir);
     QString dbPath = dataDir + "/hanayomi.db";
 
