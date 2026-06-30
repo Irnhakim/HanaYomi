@@ -1,5 +1,7 @@
 # HanaYomi
 
+<a href="https://open-store.io/app/hanayomi.hakim"><img src="https://open-store.io/badges/en_US.svg" alt="OpenStore" width="200" /></a>
+
 HanaYomi is a beautiful, premium, and native manga reader application designed for **Ubuntu Touch** devices. It is heavily inspired by the desktop/mobile elegance of **Mihon** (and Tachiyomi) and visual styles of **Suwayomi WebUI**. Built on top of C++ and Qt Quick/QML with Lomiri Components 1.3, HanaYomi delivers a fluid, responsive, and teal-accented manga reading experience.
 
 ---
