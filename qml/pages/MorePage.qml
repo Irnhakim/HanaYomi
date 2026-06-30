@@ -31,7 +31,7 @@ Page {
                     spacing: units.gu(1)
 
                     Image {
-                        source: "../assets/icon.svg"
+                        source: "../../hanayomi.png"
                         width: units.gu(9)
                         height: units.gu(9)
                         fillMode: Image.PreserveAspectFit
