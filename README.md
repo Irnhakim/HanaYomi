@@ -77,4 +77,4 @@ The project splits performance-critical backend tasks (database operations and A
 
 ## License
 
-HanaYomi is licensed under the MIT License. See the `LICENSE` file for details.
+HanaYomi is licensed under the Apache License 2.0. See the `LICENSE` file for details.
