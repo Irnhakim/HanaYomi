@@ -10,6 +10,9 @@ All notable changes to the HanaYomi project will be documented in this file.
 - **Latest vs Popular Manga Filter**: Fixed the "Latest" button in the Browse search screen to fetch the latest updates (`getLatestManga`) instead of repeating popular manga (`getPopularManga`).
 - **Visual Overlap Overlays**: Fixed overlap issues in the Extensions tab caused by using `anchors.centerIn` inside vertical QML `Column` positioning.
 - **Top Black Gap Offset**: Resolved viewport top offset layout gaps by recalculating element heights dynamically in `BrowsePage.qml` (`height: parent.height - y`).
+
+### Added
+- **Tracking Settings Menu**: Added a new settings sub-page for tracking configuration (Settings -> Tracking) with toggle controls for automated reading progress updates and a beautiful list of tracking providers (MyAnimeList, AniList, Kitsu, Shikimori, MangaUpdates, Bangumi) matching the Suwayomi layout.
 ---
 
 ## [1.0.0] - 2026-07-01

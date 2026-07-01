@@ -175,7 +175,7 @@ Page {
                 width: parent.width
                 Repeater {
                     model: [
-                        { label: "Settings",    icon: "settings", page: "" },
+                        { label: "Settings",    icon: "settings", page: "SettingsPage.qml" },
                         { label: "Support Us",  icon: "like",     page: "" },
                         { label: "About",       icon: "info",     page: "" },
                         { label: "Help",        icon: "help",     page: "" }

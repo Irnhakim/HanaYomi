@@ -16,6 +16,8 @@ MainView {
         property bool incognitoMode: false
         property bool downloadedOnly: false
         property bool nsfwEnabled: false
+        property bool trackUpdateAfterReading: true
+        property bool trackUpdateAfterMarkAsRead: true
     }
 
     width: units.gu(50)
