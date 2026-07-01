@@ -56,6 +56,17 @@ Page {
     Component.onDestruction: {
         if (chapterId !== "") {
             db.markChapterRead(chapterId, true, readerPage.currentPage)
+            
+            // Logika Sinkronisasi Tracking Progress ke Suwayomi Server
+            if (appSettings.trackUpdateAfterReading && mangaId !== "") {
+                // Ambil semua tracker terikat untuk manga ini dan update progressnya
+                // (Mengirimkan progress chapter yang baru dibaca ke local server)
+                // Di sini, kita mengirimkan sinyal update progress ke server local
+                // 1 = MyAnimeList, 2 = AniList, 3 = Kitsu, 4 = MangaUpdates, 5 = Shikimori, 6 = Bangumi
+                for (var id = 1; id <= 6; id++) {
+                    mangaDex.updateTrackProgress(mangaId, id, readerPage.currentPage + 1)
+                }
+            }
         }
     }
 

@@ -49,6 +49,14 @@ public:
     Q_INVOKABLE void setNsfwEnabled(bool enabled) { m_nsfwEnabled = enabled; }
     Q_INVOKABLE bool isNsfwEnabled() const { return m_nsfwEnabled; }
 
+    // Logic Tracking Suwayomi API
+    Q_INVOKABLE void getTrackList(const QString &mangaId);
+    Q_INVOKABLE void loginTracker(int trackerId, const QString &username, const QString &password);
+    Q_INVOKABLE void logoutTracker(int trackerId);
+    Q_INVOKABLE void bindTracker(const QString &mangaId, int trackerId, const QString &remoteId, bool isPrivate);
+    Q_INVOKABLE void updateTrackProgress(const QString &mangaId, int trackerId, int lastChapterRead, double score = 0);
+
+
     // Helper HTTP untuk Scraper JS
     Q_INVOKABLE QString httpGet(const QString &url);
     Q_INVOKABLE QString httpPost(const QString &url, const QString &payload, const QString &contentType = "application/x-www-form-urlencoded");
@@ -69,6 +77,11 @@ signals:
 
     // Emitted jika ada error
     void networkError(QString message);
+
+    // Tracking signals
+    void trackListReady(QVariantList tracks);
+    void trackerLoginStatus(int trackerId, bool success, QString message);
+    void trackerLogoutStatus(int trackerId, bool success);
 
 private:
     QNetworkAccessManager *m_nam;

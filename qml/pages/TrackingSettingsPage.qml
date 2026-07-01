@@ -141,7 +141,147 @@ Page {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            // Handler login / integration tracking
+                            loginOverlay.selectedTrackerId = index + 1 // 1-based index
+                            loginOverlay.selectedTrackerName = modelData.name
+                            usernameInput.text = ""
+                            passwordInput.text = ""
+                            loginOverlay.visible = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Connections to C++ signals
+    Connections {
+        target: mangaDex
+        onTrackerLoginStatus: {
+            // trackerId, success, message
+            statusTimer.showStatus(success ? "Logged in to " + loginOverlay.selectedTrackerName : "Login failed: " + message)
+            loginOverlay.visible = false
+        }
+        onTrackerLogoutStatus: {
+            statusTimer.showStatus(success ? "Logged out" : "Logout failed")
+        }
+    }
+
+    Timer {
+        id: statusTimer
+        interval: 3000
+        property string msg: ""
+        onTriggered: statusLabel.text = ""
+        function showStatus(m) {
+            statusLabel.text = m
+            restart()
+        }
+    }
+
+    Label {
+        id: statusLabel
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: units.gu(2)
+        anchors.horizontalCenter: parent.horizontalCenter
+        color: "#00bfa5"
+        font.bold: true
+        font.pixelSize: units.gu(1.8)
+    }
+
+    // ---- LOGIN OVERLAY ----
+    Rectangle {
+        id: loginOverlay
+        anchors.fill: parent
+        color: "#CC000000"
+        visible: false
+
+        property int selectedTrackerId: 0
+        property string selectedTrackerName: ""
+
+        MouseArea { anchors.fill: parent } // Block underlying clicks
+
+        Rectangle {
+            width: parent.width - units.gu(6)
+            height: units.gu(32)
+            radius: units.dp(10)
+            color: "#1E1E1E"
+            border.color: "#2A2A2A"
+            anchors.centerIn: parent
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: units.gu(2)
+                spacing: units.gu(2)
+
+                Label {
+                    text: "Login to " + loginOverlay.selectedTrackerName
+                    font.bold: true
+                    font.pixelSize: units.gu(2)
+                    color: "white"
+                }
+
+                // Username Input
+                TextField {
+                    id: usernameInput
+                    width: parent.width
+                    placeholderText: "Username / Email"
+                    color: "white"
+                }
+
+                // Password Input
+                TextField {
+                    id: passwordInput
+                    width: parent.width
+                    placeholderText: "Password"
+                    echoMode: TextInput.Password
+                    color: "white"
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: units.gu(1.5)
+
+                    Rectangle {
+                        width: parent.width / 2 - units.gu(0.75)
+                        height: units.gu(4.5)
+                        radius: units.dp(6)
+                        color: "#2D2D2D"
+                        Label { anchors.centerIn: parent; text: "Cancel"; color: "white" }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: loginOverlay.visible = false
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width / 2 - units.gu(0.75)
+                        height: units.gu(4.5)
+                        radius: units.dp(6)
+                        color: "#004d40"
+                        border.color: "#00bfa5"
+                        Label { anchors.centerIn: parent; text: "Login"; color: "#00bfa5"; font.bold: true }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                mangaDex.loginTracker(loginOverlay.selectedTrackerId, usernameInput.text, passwordInput.text)
+                                statusLabel.text = "Logging in..."
+                            }
+                        }
+                    }
+                }
+
+                // Logout option if already logged in
+                Rectangle {
+                    width: parent.width
+                    height: units.gu(4.5)
+                    radius: units.dp(6)
+                    color: "#3E2525"
+                    Label { anchors.centerIn: parent; text: "Logout / Unlink Account"; color: "#FF6B6B"; font.bold: true }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            mangaDex.logoutTracker(loginOverlay.selectedTrackerId)
+                            loginOverlay.visible = false
+                            statusLabel.text = "Logging out..."
                         }
                     }
                 }

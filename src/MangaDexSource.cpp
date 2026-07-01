@@ -833,3 +833,116 @@ QVariantList MangaDexSource::parseMangaThemeHtml(const QString &html, const QStr
     }
     return results;
 }
+
+// ---- TRACKING IMPLEMENTATION ----
+
+void MangaDexSource::getTrackList(const QString &mangaId)
+{
+    if (m_suwayomiServer.isEmpty()) return;
+
+    // REST API /api/v1/track/list
+    QUrl url(m_suwayomiServer + "/api/v1/track/list");
+    QNetworkRequest req = createRequest(url);
+    QNetworkReply *reply = m_nam->get(req);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        reply->deleteLater();
+        if (reply->error() != QNetworkReply::NoError) {
+            emit networkError("Tracker List Error: " + reply->errorString());
+            return;
+        }
+
+        // Parse JSON list trackers
+        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+        QJsonArray trackers = doc.isArray() ? doc.array() : doc.object().value("trackers").toArray();
+        QVariantList results;
+        for (const QJsonValue &val : trackers) {
+            results.append(val.toVariant());
+        }
+        emit trackListReady(results);
+    });
+}
+
+void MangaDexSource::loginTracker(int trackerId, const QString &username, const QString &password)
+{
+    if (m_suwayomiServer.isEmpty()) return;
+
+    QUrl url(m_suwayomiServer + "/api/v1/track/login");
+    QNetworkRequest req = createRequest(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject body;
+    body["id"] = trackerId;
+    body["username"] = username;
+    body["password"] = password;
+
+    QNetworkReply *reply = m_nam->post(req, QJsonDocument(body).toJson());
+    connect(reply, &QNetworkReply::finished, this, [this, reply, trackerId]() {
+        reply->deleteLater();
+        bool success = (reply->error() == QNetworkReply::NoError);
+        QString msg = success ? "Success" : reply->errorString();
+        emit trackerLoginStatus(trackerId, success, msg);
+    });
+}
+
+void MangaDexSource::logoutTracker(int trackerId)
+{
+    if (m_suwayomiServer.isEmpty()) return;
+
+    QUrl url(m_suwayomiServer + "/api/v1/track/logout");
+    QNetworkRequest req = createRequest(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject body;
+    body["id"] = trackerId;
+
+    QNetworkReply *reply = m_nam->post(req, QJsonDocument(body).toJson());
+    connect(reply, &QNetworkReply::finished, this, [this, reply, trackerId]() {
+        reply->deleteLater();
+        bool success = (reply->error() == QNetworkReply::NoError);
+        emit trackerLogoutStatus(trackerId, success);
+    });
+}
+
+void MangaDexSource::bindTracker(const QString &mangaId, int trackerId, const QString &remoteId, bool isPrivate)
+{
+    if (m_suwayomiServer.isEmpty()) return;
+
+    // GET /api/v1/track/bind?mangaId=X&trackerId=Y&remoteId=Z&private=A
+    QUrl url(m_suwayomiServer + "/api/v1/track/bind");
+    QUrlQuery q;
+    q.addQueryItem("mangaId", mangaId);
+    q.addQueryItem("trackerId", QString::number(trackerId));
+    q.addQueryItem("remoteId", remoteId);
+    q.addQueryItem("private", isPrivate ? "true" : "false");
+    url.setQuery(q);
+
+    QNetworkRequest req = createRequest(url);
+    QNetworkReply *reply = m_nam->get(req);
+    connect(reply, &QNetworkReply::finished, this, [reply]() {
+        reply->deleteLater();
+    });
+}
+
+void MangaDexSource::updateTrackProgress(const QString &mangaId, int trackerId, int lastChapterRead, double score)
+{
+    if (m_suwayomiServer.isEmpty()) return;
+
+    QUrl url(m_suwayomiServer + "/api/v1/track/update");
+    QNetworkRequest req = createRequest(url);
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject body;
+    body["mangaId"] = mangaId.toInt();
+    body["trackerId"] = trackerId;
+    body["lastChapterRead"] = lastChapterRead;
+    if (score > 0) {
+        body["score"] = score;
+    }
+
+    QNetworkReply *reply = m_nam->post(req, QJsonDocument(body).toJson());
+    connect(reply, &QNetworkReply::finished, this, [reply]() {
+        reply->deleteLater();
+    });
+}
+
