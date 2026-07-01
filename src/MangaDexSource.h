@@ -23,6 +23,7 @@ public:
 
     // Setara dengan HttpSource.fetchPopularManga() / getPopularManga()
     Q_INVOKABLE void getPopularManga(int page = 1);
+    Q_INVOKABLE void getLatestManga(int page = 1);
 
     // Setara dengan HttpSource.fetchSearchManga() / getSearchManga()
     Q_INVOKABLE void searchManga(const QString &query, int page = 1);

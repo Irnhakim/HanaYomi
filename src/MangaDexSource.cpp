@@ -117,6 +117,15 @@ QVariant MangaDexSource::runScraper(const QString &method, const QVariantList &a
 
     QJSValue func = scraperObj.property(method);
     if (!func.isCallable()) {
+        if (method == "getLatestManga" && scraperObj.property("_sourceId").isString() && scraperObj.property("_parseList").isCallable()) {
+            QString sourceId = scraperObj.property("_sourceId").toString();
+            QString raw = httpGet(m_suwayomiServer + "/api/v1/source/" + sourceId + "/latest/" + QString::number(args[0].toInt()));
+            QJSValue parseFunc = scraperObj.property("_parseList");
+            QJSValueList parseArgs;
+            parseArgs << engine.toScriptValue(raw);
+            QJSValue result = parseFunc.callWithInstance(scraperObj, parseArgs);
+            return result.toVariant();
+        }
         qDebug() << "Method" << method << "is not callable in scraper" << m_sourcePkg;
         return QVariant();
     }
@@ -373,7 +382,49 @@ void MangaDexSource::getPopularManga(int page)
         });
     };
 
-    (*fnHolder)();
+}
+
+// ---- getLatestManga ----
+void MangaDexSource::getLatestManga(int page)
+{
+    if (hasJsScraper()) {
+        QVariantList results = runScraper("getLatestManga", {page}).toList();
+        emit mangaListReady(results);
+        return;
+    }
+
+    if (m_baseUrl.contains("mangadex.org")) {
+        // ---- MangaDex JSON API for Latest Updates ----
+        QUrl url(m_baseUrl + "/manga");
+        QUrlQuery q;
+        q.addQueryItem("limit",               "20");
+        q.addQueryItem("offset",              QString::number((page - 1) * 20));
+        q.addQueryItem("order[latestUploadedChapter]", "desc");
+        q.addQueryItem("includes[]",          "cover_art");
+        q.addQueryItem("includes[]",          "author");
+        q.addQueryItem("contentRating[]",     "safe");
+        q.addQueryItem("contentRating[]",     "suggestive");
+        if (m_nsfwEnabled) {
+            q.addQueryItem("contentRating[]", "erotica");
+            q.addQueryItem("contentRating[]", "pornographic");
+        }
+        url.setQuery(q);
+        QNetworkRequest req = createRequest(url);
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QNetworkReply *reply = m_nam->get(req);
+        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+            reply->deleteLater();
+            if (reply->error() != QNetworkReply::NoError) { emit networkError(reply->errorString()); return; }
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonArray data   = doc.object()["data"].toArray();
+            QVariantList results;
+            for (const QJsonValue &v : data) results.append(parseMangaObject(v.toObject()));
+            emit mangaListReady(results);
+        });
+        return;
+    }
+
+    emit networkError("Latest updates not supported on this source");
 }
 
 // ---- searchManga ----

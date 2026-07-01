@@ -491,12 +491,11 @@ Page {
             }
         }
 
-        // Empty state for Extensions
         Label {
             visible: browsePage.activeTab === 1 && extensionModel.count === 0 && !isLoadingExtensions
             text: "No extensions available. Check repo settings."
             color: "#888888"
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
         }
 
         Rectangle { visible: selectedSource === ""; width: parent.width; height: visible ? units.dp(1) : 0; color: "#2A2A2A" }
@@ -727,7 +726,7 @@ Page {
                             sourceFiltersRow.activeFilter = "latest"
                             browsePage.isLoading = true
                             mangaModel.clear()
-                            mangaDex.getPopularManga(1)
+                            mangaDex.getLatestManga(1)
                         }
                     }
                 }
